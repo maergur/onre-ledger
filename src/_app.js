@@ -462,7 +462,15 @@ function openWallet(idx,solName){
         '<thead><tr><th>Horizon</th><th>Points</th><th>Rank</th><th>Move</th></tr></thead>'+
         '<tbody>'+rows+'</tbody></table></div>'+
       caution+
-      '<button class="go estbtn" type="button" id="w-est">Estimate this wallet’s airdrop →</button>'+
+      (function(){
+        var f=+document.getElementById("air-fdv").value, al=+document.getElementById("air-alloc").value;
+        var v=f*1e6*(al/100)*share;
+        var u=v>=1e6?"$"+(v/1e6).toFixed(2).replace(/\.?0+$/,"")+"M":v>=1e4?"$"+(v/1e3).toFixed(1).replace(/\.0$/,"")+"K":"$"+n(v);
+        var fl=f>=1000?"$"+(f/1000).toString().replace(/\.0$/,"")+"B":"$"+f+"M";
+        return '<div class="westim"><div><span class="k">Estimated airdrop</span><span class="v">'+u+'</span>'+
+          '<span class="s">at '+fl+' FDV · '+al+'% airdropped · today’s share</span></div>'+
+          '<button class="linkbtn" type="button" id="w-est">Adjust →</button></div>';
+      })()+
     '</div><div class="wside">'+walletSources(idx)+'</div></div>';
   document.getElementById("w-est").onclick=function(){
     document.getElementById("dlg-wallet").close();
