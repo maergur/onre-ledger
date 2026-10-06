@@ -315,7 +315,7 @@ footer a{color:var(--accent)}
 /* ---------- single-page layout ----------
    12-column board; panels that share a row stretch to the same height. */
 .board{display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); gap:20px; margin-top:20px; align-items:stretch}
-.a-look{grid-column:1/-1} .a-ref{grid-column:1/-1} .a-src{grid-column:1/-1} .a-chart{grid-column:span 7}
+.a-look{grid-column:1/-1} .a-ref{grid-column:1/-1} .a-air{grid-column:1/-1} .a-src{grid-column:1/-1} .a-chart{grid-column:span 7}
 .a-conc{grid-column:span 5} .a-top{grid-column:1/-1}
 @media (max-width:980px){ .board>*{grid-column:1/-1} }
 .panel{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:18px 20px;
@@ -463,6 +463,28 @@ tr:not(.proto) .meter i{opacity:.55}
   font-family:"IBM Plex Mono",monospace; font-weight:500; font-size:15px; letter-spacing:.06em; color:var(--ink); background:var(--surface-2);
   border:1px dashed var(--line-2); border-radius:6px; padding:3px 10px; user-select:all}
 
+/* ---------- airdrop estimator ---------- */
+.airgrid{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.1fr); gap:20px 36px; align-items:start}
+@media (max-width:900px){ .airgrid{grid-template-columns:minmax(0,1fr)} }
+.airlbl{display:block; font-size:12.5px; color:var(--muted); margin-bottom:7px}
+#air-who{width:100%; height:44px; box-sizing:border-box; padding:0 12px; font-family:"IBM Plex Mono",monospace; font-size:13px;
+  border:1px solid var(--line-2); border-radius:8px; background:var(--ground); color:var(--ink)}
+#air-who:focus{outline:2px solid var(--accent); outline-offset:1px; border-color:var(--accent)}
+.airin .hint{min-height:18px}
+.airctls{display:grid; gap:16px; margin-top:14px}
+.airhead{display:flex; flex-direction:column; gap:4px; padding:16px 18px; border-radius:10px; background:var(--surface-2);
+  border:1px solid var(--line)}
+.airhead .k{font-family:"IBM Plex Mono",monospace; font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted)}
+.airhead .v{font-family:"Plus Jakarta Sans",Inter,sans-serif; font-weight:700; font-size:40px; letter-spacing:-.03em; line-height:1.05;
+  color:var(--accent); font-variant-numeric:tabular-nums}
+.airhead .split{font-family:"IBM Plex Mono",monospace; font-size:12px; color:var(--ink-2)}
+.airper{font-size:12.5px; color:var(--muted)}
+.airper b{color:var(--ink); font-family:"IBM Plex Mono",monospace; font-weight:500}
+.airout .tscroll{margin-top:12px}
+.airt th,.airt td{padding:8px 12px}
+@media (max-width:640px){ .airt .lg{display:none} .airt th,.airt td{padding:8px} }
+.airt td.cur{background:var(--accent-soft); color:var(--ink); font-weight:600}
+
 /* ---------- dialogs ---------- */
 dialog.pop{border:1px solid var(--line-2); border-radius:14px; padding:0; background:var(--ground); color:var(--ink);
   width:min(760px,calc(100vw - 32px)); max-height:calc(100dvh - 48px); box-shadow:0 24px 60px -20px rgba(0,0,0,.45)}
@@ -595,6 +617,35 @@ tr.hit td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
         </div>
       </div>
       <p class="refnote">Full transparency: I’m the person who builds this page, and I earn referral points from wallets that join with this code. The ledger stays free and works exactly the same whether you use it or not. Thank you either way.</p>
+    </div>
+
+    <div class="panel a-air" id="airdrop">
+      <div class="ph"><h2>Speculate on your airdrop</h2><span class="eyebrow">Hypothetical · not financial advice</span></div>
+      <div class="airgrid">
+        <div class="airin">
+          <label class="airlbl" for="air-who">Wallet address or number of points</label>
+          <input id="air-who" type="text" spellcheck="false" autocomplete="off" placeholder="Paste a wallet, or type points like 25M">
+          <p class="hint" id="air-whohint"></p>
+          <div class="airctls">
+            <div class="ctl"><label for="air-fdv">Fully diluted valuation <b id="air-fdv-v"></b></label>
+              <input type="range" id="air-fdv" min="25" max="3000" step="25" value="300"></div>
+            <div class="ctl"><label for="air-alloc">Share of supply airdropped <b id="air-alloc-v"></b></label>
+              <input type="range" id="air-alloc" min="1" max="30" step="0.5" value="5"></div>
+            <div class="ctl"><label for="air-mo">Keep farming for <b id="air-mo-v"></b></label>
+              <input type="range" id="air-mo" min="0" max="18" step="1" value="0"></div>
+          </div>
+        </div>
+        <div class="airout">
+          <div class="airhead">
+            <span class="k">Estimated airdrop</span>
+            <span class="v" id="air-val">—</span>
+            <span class="split" id="air-sub"></span>
+            <span class="airper" id="air-per"></span>
+          </div>
+          <div class="tscroll"><table class="airt" id="air-table"></table></div>
+        </div>
+      </div>
+      <p class="refnote" id="air-note"></p>
     </div>
 
     <div class="panel a-chart">

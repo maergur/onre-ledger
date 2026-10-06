@@ -616,6 +616,73 @@ function rowOpen(e){
   el.addEventListener("click",rowOpen); el.addEventListener("keydown",rowOpen);
 });
 
+/* ---------- airdrop estimator (main page) ---------- */
+(function(){
+  var who=document.getElementById("air-who"), hint=document.getElementById("air-whohint");
+  var el={fdv:document.getElementById("air-fdv"), alloc:document.getElementById("air-alloc"), mo:document.getElementById("air-mo")};
+  var EXAMPLE=10e6, src={pts:EXAMPLE, rate:0, label:"example"};
+  try{ var sv=JSON.parse(localStorage.getItem("onre-air")||"null");
+    if(sv){ el.fdv.value=sv.fdv; el.alloc.value=sv.alloc; el.mo.value=sv.mo; if(sv.who)who.value=sv.who; } }catch(e){}
+  function usd(x){
+    function t(v,d){ var s=v.toFixed(d); return s.indexOf(".")>-1?s.replace(/\.?0+$/,""):s; }
+    if(x>=1e9)return "$"+t(x/1e9,2)+"B";
+    if(x>=1e6)return "$"+t(x/1e6,2)+"M";
+    if(x>=1e4)return "$"+t(x/1e3,1)+"K";
+    if(x>=1)return "$"+n(x);
+    return "$"+x.toFixed(2);
+  }
+  function parsePts(s){
+    var m=s.replace(/[,_\s]/g,"").match(/^(\d+(?:\.\d+)?)([kmb])?$/i); if(!m)return null;
+    return parseFloat(m[1])*({k:1e3,m:1e6,b:1e9}[(m[2]||"").toLowerCase()]||1);
+  }
+  function resolve(){
+    var v=who.value.trim();
+    if(!v){ src={pts:EXAMPLE,rate:0,label:"example"}; hint.textContent="Showing an example of 10M points. Paste your wallet to use your own."; return; }
+    if(byAddr[v]!==undefined){
+      var i=byAddr[v]; src={pts:ptsAt(i), rate:rtsAt(i), label:"wallet"};
+      hint.textContent="Rank #"+n(i+1)+" · "+n(ptsAt(i))+" points · earning "+(rtsAt(i)>0?"+"+compact(rtsAt(i))+"/day":"nothing in the last "+(Math.round(D.rateDays*10)/10)+" days");
+      return;
+    }
+    var p=parsePts(v);
+    if(p!==null){ src={pts:p,rate:0,label:"points"}; hint.textContent=n(p)+" points, held flat (type a wallet address to include its daily rate)."; return; }
+    src={pts:EXAMPLE,rate:0,label:"example"};
+    hint.textContent=v.length>=32?"That wallet isn’t in this snapshot; showing the 10M-point example.":"Type a number like 25000000 or 25M, or paste a wallet address.";
+  }
+  function valueAt(fdv,alloc,days){
+    var my=src.pts+src.rate*days, sys=D.system+D.totalRate*days;
+    return {v:fdv*alloc*my/sys, share:my/sys, sys:sys, my:my};
+  }
+  function run(){
+    resolve();
+    var fdv=+el.fdv.value*1e6, alloc=+el.alloc.value/100, mo=+el.mo.value, days=Math.round(mo*30.44);
+    document.getElementById("air-fdv-v").textContent=usd(fdv);
+    document.getElementById("air-alloc-v").textContent=(+el.alloc.value).toFixed(1).replace(/\.0$/,"")+"%";
+    document.getElementById("air-mo-v").textContent=mo===0?"not at all":mo+(mo===1?" month":" months");
+    var r=valueAt(fdv,alloc,days);
+    document.getElementById("air-val").textContent=usd(r.v);
+    document.getElementById("air-sub").textContent=compact(r.my)+" points = "+(r.share*100).toFixed(4)+"% of "+compact(r.sys)+
+      (days?" after "+mo+(mo===1?" month":" months"):" today");
+    document.getElementById("air-per").innerHTML="<b>"+usd(fdv*alloc*1e6/r.sys)+"</b> per 1M points at these settings";
+    var F=[100,300,1000,3000], A=[5,10,15];
+    var head="<thead><tr><th>FDV</th>"+A.map(function(x){return "<th>"+x+'%<span class="lg"> airdropped</span></th>';}).join("")+"</tr></thead>";
+    var body=F.map(function(f){
+      return "<tr><td>"+usd(f*1e6)+"</td>"+A.map(function(x){
+        var cur=(f===+el.fdv.value&&x===+el.alloc.value);
+        return '<td class="n'+(cur?' cur':'')+'">'+usd(valueAt(f*1e6,x/100,days).v)+"</td>";
+      }).join("")+"</tr>";
+    }).join("");
+    document.getElementById("air-table").innerHTML=head+"<tbody>"+body+"</tbody>";
+    document.getElementById("air-note").textContent="OnRe has not announced a token, a valuation or an airdrop allocation. "+
+      "This is arithmetic on today’s points, not a forecast: value = FDV × share airdropped × your share of all points. "+
+      (days?"Farming forward carries this wallet and the whole population at their measured daily rates, which will change. ":"")+
+      "Not financial advice.";
+    try{ localStorage.setItem("onre-air",JSON.stringify({fdv:+el.fdv.value,alloc:+el.alloc.value,mo:mo,who:who.value.trim()})); }catch(e){}
+  }
+  [el.fdv,el.alloc,el.mo].forEach(function(x){x.addEventListener("input",run);});
+  var t; who.addEventListener("input",function(){ clearTimeout(t); t=setTimeout(run,150); });
+  run();
+})();
+
 /* ---------- builder credit + referral ---------- */
 (function(){
   var site=D.site||{};
