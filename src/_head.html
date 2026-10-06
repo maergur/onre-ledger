@@ -1,17 +1,17 @@
 <title>Pointsbook</title>
-<meta name="description" content="Unofficial OnRe points ledger: every wallet's rank and daily rate, where points come from by protocol and product, who holds them, and what changed. Updated hourly.">
+<meta name="description" content="Every OnRe point, broken down by protocol and product. Look up any wallet's rank, daily rate and sources. Updated hourly.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Pointsbook">
-<meta property="og:title" content="Pointsbook — the unofficial OnRe points ledger">
-<meta property="og:description" content="Look up any wallet, see where points come from and who holds them. Every OnRe wallet, updated hourly.">
+<meta property="og:title" content="Pointsbook — OnRe points by protocol and product">
+<meta property="og:description" content="Every OnRe point, broken down by protocol and product. Look up any wallet. Updated hourly.">
 <meta property="og:url" content="https://pointsbook.io/">
 <meta property="og:image" content="https://pointsbook.io/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:creator" content="@maeonchain">
-<meta name="twitter:title" content="Pointsbook — the unofficial OnRe points ledger">
-<meta name="twitter:description" content="Look up any wallet, see where points come from and who holds them. Updated hourly.">
+<meta name="twitter:title" content="Pointsbook — OnRe points by protocol and product">
+<meta name="twitter:description" content="Every OnRe point, broken down by protocol and product. Look up any wallet. Updated hourly.">
 <meta name="twitter:image" content="https://pointsbook.io/og.png">
 <meta name="theme-color" content="#1A1A17">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -315,8 +315,8 @@ footer a{color:var(--accent)}
 /* ---------- single-page layout ----------
    12-column board; panels that share a row stretch to the same height. */
 .board{display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); gap:20px; margin-top:20px; align-items:stretch}
-.a-look{grid-column:1/-1} .a-ref{grid-column:1/-1} .a-chart{grid-column:span 7} .a-src{grid-column:span 5}
-.a-top{grid-column:span 7} .a-conc{grid-column:span 5}
+.a-look{grid-column:1/-1} .a-ref{grid-column:1/-1} .a-src{grid-column:1/-1} .a-chart{grid-column:span 7}
+.a-conc{grid-column:span 5} .a-top{grid-column:1/-1}
 @media (max-width:980px){ .board>*{grid-column:1/-1} }
 .panel{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:18px 20px;
   min-width:0; display:flex; flex-direction:column}
@@ -377,6 +377,17 @@ td.share{white-space:nowrap}
 tr:not(.proto) .meter i{opacity:.55}
 .meter i{display:block; height:100%; border-radius:3px}
 .srcwrap{margin-top:18px}
+.srcbar-lg{height:16px; border-radius:8px}
+.srcgrid{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.25fr); gap:16px 48px; margin-top:20px}
+@media (max-width:900px){ .srcgrid{grid-template-columns:minmax(0,1fr)} }
+.srch{display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:12px;
+  padding-bottom:8px; border-bottom:1px solid var(--line)}
+.srch h3{font-family:"Plus Jakarta Sans",Inter,sans-serif; font-size:14px; font-weight:600; margin:0; color:var(--ink)}
+.srccol .srclegend{margin-top:0}
+#prodlist .srcrow{grid-template-columns:minmax(170px,42%) minmax(0,1fr) 52px}
+.srcrow .nm .pl{display:flex; flex-direction:column; min-width:0; line-height:1.25}
+.srcrow .nm .pl small{font-family:"IBM Plex Mono",monospace; font-size:10.5px; color:var(--faint)}
+.srcrow .rt{font-family:"IBM Plex Mono",monospace; font-size:10.5px; color:var(--good); margin-left:6px}
 .srcwrap h3{font-size:15px; font-weight:600; letter-spacing:-.012em; margin:0 0 10px}
 
 /* ---------- concentration ---------- */
@@ -512,7 +523,7 @@ tr.hit td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
 </style>
 <header class="top">
   <div class="wrap topbar">
-    <span class="brand"><span class="dot"></span><b>Pointsbook</b><span class="sub">OnRe points ledger</span><span class="unoff" title="Community-built. Not affiliated with OnRe.">Unofficial</span></span>
+    <span class="brand"><span class="dot"></span><b>Pointsbook</b><span class="sub">OnRe points ledger</span></span>
     <span class="asof" id="asof"></span>
     <a class="byline" id="byline" href="#" target="_blank" rel="noopener" hidden></a>
     <span class="bellwrap" id="events-sec">
@@ -547,6 +558,22 @@ tr.hit td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
   <div class="stats" id="stats"></div>
 
   <div class="board">
+    <div class="panel a-src" id="src-sec">
+      <div class="ph"><h2>Where the points come from</h2><span class="eyebrow" id="srcasof"></span></div>
+      <div class="srcbar srcbar-lg" id="srcbar" role="img"></div>
+      <div class="srcgrid">
+        <div class="srccol">
+          <div class="srch"><h3>By protocol</h3><span class="eyebrow">Share of all points</span></div>
+          <div class="srclegend" id="srclegend"></div>
+        </div>
+        <div class="srccol">
+          <div class="srch"><h3>By product</h3><button class="linkbtn" id="srcbtn" type="button">All products</button></div>
+          <div class="srclegend" id="prodlist"></div>
+        </div>
+      </div>
+      <p class="hint push" id="srcnote"></p>
+    </div>
+
     <div class="panel lookup a-look">
       <div class="ph"><h2>Find a wallet</h2><span class="eyebrow" id="lookcount"></span></div>
       <form id="lform" autocomplete="off">
@@ -579,11 +606,13 @@ tr.hit td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
       </div>
     </div>
 
-    <div class="panel a-src" id="src-sec">
-      <div class="ph"><h2>Where points come from</h2><button class="linkbtn" id="srcbtn" type="button">By product</button></div>
-      <div class="srcbar" id="srcbar" role="img"></div>
-      <div class="srclegend" id="srclegend"></div>
-      <p class="hint push" id="srcnote"></p>
+    <div class="panel a-conc">
+      <div class="ph"><h2>Who holds the points</h2><span class="eyebrow">By rank</span></div>
+      <div class="conc">
+        <div class="conc-chart" id="conc-chart"></div>
+        <div class="conc-legend" id="conc-legend"></div>
+      </div>
+      <p class="hint push" id="conc-note"></p>
     </div>
 
     <div class="panel a-top">
@@ -595,16 +624,6 @@ tr.hit td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
         </table>
       </div>
     </div>
-
-    <div class="panel a-conc">
-      <div class="ph"><h2>Who holds the points</h2><span class="eyebrow">By rank</span></div>
-      <div class="conc">
-        <div class="conc-chart" id="conc-chart"></div>
-        <div class="conc-legend" id="conc-legend"></div>
-      </div>
-      <p class="hint push" id="conc-note"></p>
-    </div>
-
   </div>
 
   <div class="foot">

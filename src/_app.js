@@ -321,7 +321,20 @@ function srcTable(G,opts){
       '<span class="bar"><i style="width:'+(s/topShare*100).toFixed(1)+'%;background:'+PCOL[gr.p]+'"></i></span>'+
       '<b>'+sh1(s)+'</b></div>';
   }).join("");
-  document.getElementById("srcnote").textContent="Share of every point ever credited, as itemised by OnRe on "+SRC.asOf+".";
+  /* products: every label ranked on its own, coloured by its protocol */
+  var prods=SRC.labels.map(function(l,i){return {p:l[0],n:l[1],v:SRC.pts[i],w:SRC.wallets[i],r:SRC.rate?SRC.rate[i]:0};})
+    .filter(function(x){return x.v>0;}).sort(function(x,y){return y.v-x.v;});
+  var topP=prods.length?prods[0].v:1, SHOWN=10;
+  document.getElementById("prodlist").innerHTML=prods.slice(0,SHOWN).map(function(x){
+    var s=x.v/G.total;
+    return '<div class="srcrow"><span class="nm"><span class="sw" style="background:'+PCOL[x.p]+'"></span>'+
+      '<span class="pl">'+esc(x.p===x.n?x.n:x.p+" · "+x.n)+'<small>'+n(x.w)+' wallets'+(x.r>0?' · +'+compact(x.r)+'/day':'')+'</small></span></span>'+
+      '<span class="bar"><i style="width:'+(x.v/topP*100).toFixed(1)+'%;background:'+PCOL[x.p]+'"></i></span>'+
+      '<b>'+sh1(s)+'</b></div>';
+  }).join("");
+  document.getElementById("srcbtn").textContent="All "+prods.length+" products";
+  document.getElementById("srcasof").textContent=n(G.total)+" points · "+SRC.labels.length+" products";
+  document.getElementById("srcnote").textContent="Share of every point ever credited, as itemised by OnRe on "+SRC.asOf+". "+srcRateNote();
   document.getElementById("srclead").textContent="All "+n(G.total)+" points across "+n(N)+" wallets, split by the protocol and product OnRe credits them to. "+srcRateNote();
   document.getElementById("srctable").innerHTML=srcTable(G,{rate:!!SRC.rate,wallets:true});
   document.getElementById("srcbtn").onclick=function(){openDlg("dlg-sources","sources");};
