@@ -1,0 +1,623 @@
+<title>OnRe Points Ledger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{
+  --ground:#F4F7F6; --surface:#FFFFFF; --surface-2:#EDF2F1;
+  --ink:#0F1C1E; --ink-2:#31474A; --muted:#5F7375; --faint:#8DA2A3;
+  --line:#DBE5E4; --line-2:#C6D5D3;
+  --accent:#0B7C7B; --accent-ink:#065C5B; --accent-soft:#D6EAE8;
+  --good:#1C7A4E; --good-soft:#D4EBDE;
+  --warn:#8F5F0C; --warn-soft:#F5E6C8;
+  --bad:#A32F47; --bad-soft:#F6DCE1;
+  --shadow:0 1px 2px rgba(15,28,30,.06),0 6px 18px -10px rgba(15,28,30,.22);
+  --c1:#0B7C7B; --c2:#4F5BD5; --c3:#B67A12; --c4:#C2456B; --c5:#3E8E41; --c6:#8A5CB8; --c0:#A9B8B7;
+  --r:10px;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+/* Dark is the default for every viewer; light applies only when chosen with the theme button. */
+:root:not([data-theme="light"]){
+  --ground:#0A1214; --surface:#111C1F; --surface-2:#172629;
+  --ink:#E8EFEE; --ink-2:#C2D2D1; --muted:#90A4A4; --faint:#6B8183;
+  --line:#223538; --line-2:#2F474B;
+  --accent:#3FBFB8; --accent-ink:#7AD8D1; --accent-soft:#12312F;
+  --good:#4FCB8C; --good-soft:#123024;
+  --warn:#E0A94A; --warn-soft:#332611;
+  --bad:#F0708A; --bad-soft:#39161F;
+  --c1:#3FBFB8; --c2:#8C95F0; --c3:#E5AE4E; --c4:#EE7D9C; --c5:#6CC570; --c6:#B992E3; --c0:#4A6164;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 6px 20px -12px rgba(0,0,0,.7);
+  color-scheme:dark;
+}
+:root[data-theme="light"]{color-scheme:light}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--ground); color:var(--ink);
+  font-family:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  font-size:15px; line-height:1.55; -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1320px; margin:0 auto; padding-inline:clamp(16px,3vw,32px)}
+h1,h2,h3{font-family:Archivo,"IBM Plex Sans",system-ui,sans-serif; text-wrap:balance; margin:0}
+.mono{font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace; font-variant-numeric:tabular-nums}
+.num{font-family:"IBM Plex Mono",ui-monospace,monospace; font-variant-numeric:tabular-nums; letter-spacing:-.01em}
+.eyebrow{font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.11em;
+  text-transform:uppercase; color:var(--muted)}
+
+/* ---------- header ---------- */
+header.top{
+  position:sticky; top:env(safe-area-inset-top,0px); z-index:30;
+  background:color-mix(in srgb,var(--ground) 88%,transparent);
+  backdrop-filter:blur(10px); border-bottom:1px solid var(--line);
+}
+.topbar{display:flex; align-items:center; gap:14px; padding-block:11px; flex-wrap:wrap}
+.brand{display:flex; align-items:baseline; gap:9px; margin-right:auto; min-width:0}
+.brand b{font-family:Archivo,sans-serif; font-weight:700; font-size:17px; letter-spacing:-.02em}
+.brand .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);flex:none;align-self:center}
+.asof{font-family:"IBM Plex Mono",monospace; font-size:11.5px; color:var(--muted); white-space:nowrap}
+.tbtn{
+  font:inherit; font-size:12px; color:var(--ink-2); background:var(--surface);
+  border:1px solid var(--line-2); border-radius:7px; padding:5px 10px; cursor:pointer;
+}
+.tbtn:hover{border-color:var(--accent); color:var(--accent)}
+.tbtn:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+
+/* ---------- stat strip ---------- */
+.stats{display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:var(--line);
+  border:1px solid var(--line); border-radius:var(--r); overflow:hidden; margin-top:20px}
+.stat{background:var(--surface); padding:13px 15px; min-width:0}
+.stat .k{font-family:"IBM Plex Mono",monospace; font-size:10.5px; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--muted); display:block; margin-bottom:5px}
+.stat .v{font-family:Archivo,sans-serif; font-weight:600; font-size:20px; letter-spacing:-.025em;
+  font-variant-numeric:tabular-nums; display:block; line-height:1.15; overflow-wrap:anywhere}
+.stat .s{font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--muted); display:block; margin-top:3px}
+.s.up{color:var(--good)} .s.dn{color:var(--bad)}
+
+/* ---------- stat tooltips ---------- */
+.ktip{all:unset; box-sizing:border-box; display:inline-flex !important; align-items:center; gap:6px; cursor:help;
+  font-family:"IBM Plex Mono",monospace; font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted);
+  margin-bottom:5px; border-radius:4px}
+.ktip:hover,.ktip:focus-visible{color:var(--ink-2)}
+.ktip:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+.qi{display:inline-grid; place-items:center; width:14px; height:14px; border-radius:50%; border:1px solid var(--line-2);
+  font-size:9px; letter-spacing:0; line-height:1; color:var(--faint)}
+.ktip:hover .qi,.ktip:focus-visible .qi{border-color:var(--accent); color:var(--accent)}
+.tip{position:fixed; z-index:100; padding:10px 12px; border-radius:8px; background:var(--ink); color:var(--ground);
+  font-size:12.5px; line-height:1.5; box-shadow:0 10px 30px -12px rgba(0,0,0,.5); pointer-events:none}
+
+/* ---------- sections ---------- */
+section{margin-top:40px}
+.shead{display:flex; align-items:baseline; gap:12px; margin-bottom:14px; flex-wrap:wrap}
+.shead h2{font-size:20px; font-weight:600; letter-spacing:-.02em}
+.shead p{margin:0; color:var(--muted); font-size:13.5px; max-width:62ch}
+
+/* ---------- lookup ---------- */
+.lookup{background:var(--surface); border:1px solid var(--line); border-radius:var(--r);
+  padding:20px; box-shadow:var(--shadow)}
+.lookup form{display:flex; gap:9px; margin-top:12px; flex-wrap:wrap}
+.lookup input{
+  flex:1 1 300px; min-width:0; font-family:"IBM Plex Mono",monospace; font-size:13px;
+  padding:10px 12px; border:1px solid var(--line-2); border-radius:8px;
+  background:var(--ground); color:var(--ink);
+}
+.lookup input:focus{outline:2px solid var(--accent); outline-offset:1px; border-color:var(--accent)}
+.go{font:inherit; font-weight:500; font-size:14px; background:var(--accent); color:#fff; border:0;
+  border-radius:8px; padding:10px 20px; cursor:pointer; flex:none}
+.go:hover{background:var(--accent-ink)}
+.go:focus-visible{outline:2px solid var(--ink); outline-offset:2px}
+.hint{font-size:12.5px; color:var(--muted); margin:10px 0 0}
+.hint code{font-family:"IBM Plex Mono",monospace; font-size:11.5px; background:var(--surface-2);
+  padding:1px 5px; border-radius:4px; cursor:pointer; color:var(--ink-2)}
+.err{color:var(--bad); font-size:13px; margin:10px 0 0; font-weight:500}
+
+/* ---------- result ---------- */
+#result{margin-top:18px}
+.rgrid{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:1px;
+  background:var(--line); border:1px solid var(--line); border-radius:var(--r); overflow:hidden}
+.pill{display:inline-flex; align-items:center; gap:5px; font-family:"IBM Plex Mono",monospace;
+  font-size:11px; padding:2px 8px; border-radius:20px; font-weight:500; letter-spacing:.02em}
+.pill.good{background:var(--good-soft); color:var(--good)}
+.pill.warn{background:var(--warn-soft); color:var(--warn)}
+.pill.bad{background:var(--bad-soft); color:var(--bad)}
+.pill.flat{background:var(--surface-2); color:var(--muted)}
+.addr-line{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:14px}
+.addr-line .a{font-family:"IBM Plex Mono",monospace; font-size:13px; color:var(--ink-2);
+  overflow-wrap:anywhere}
+.projwrap{margin-top:20px; background:var(--surface); border:1px solid var(--line);
+  border-radius:var(--r); padding:18px; box-shadow:var(--shadow)}
+.note{font-size:12.5px; color:var(--muted); margin:12px 0 0; padding-left:11px;
+  border-left:2px solid var(--line-2); max-width:70ch}
+.note strong{color:var(--ink-2); font-weight:500}
+
+/* ---------- airdrop calculator ---------- */
+.calc{margin-top:20px; background:var(--surface); border:1px solid var(--line);
+  border-radius:var(--r); overflow:hidden; box-shadow:var(--shadow)}
+.calc-out{padding:18px 20px; background:var(--surface-2); border-bottom:1px solid var(--line)}
+.calc-out .k{font-family:"IBM Plex Mono",monospace; font-size:10.5px; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--muted); display:block; margin-bottom:6px}
+.calc-out .v{font-family:Archivo,sans-serif; font-weight:700; font-size:34px; letter-spacing:-.03em;
+  font-variant-numeric:tabular-nums; line-height:1.05; display:block; color:var(--ink);
+  overflow-wrap:anywhere}
+.calc-out .split{font-family:"IBM Plex Mono",monospace; font-size:12px; color:var(--ink-2);
+  display:block; margin-top:7px}
+.calc-out .formula{font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--faint);
+  display:block; margin-top:8px; overflow-wrap:anywhere}
+.calc-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(208px,1fr)); gap:16px 22px;
+  padding:18px 20px}
+.ctl label{display:flex; justify-content:space-between; align-items:baseline; gap:10px;
+  font-size:12.5px; color:var(--muted); margin-bottom:7px}
+.ctl label b{font-family:"IBM Plex Mono",monospace; font-size:12.5px; font-weight:500;
+  color:var(--ink); font-variant-numeric:tabular-nums}
+.ctl input[type=range]{
+  -webkit-appearance:none; appearance:none; width:100%; height:20px; background:none;
+  margin:0; cursor:pointer; display:block;
+}
+.ctl input[type=range]::-webkit-slider-runnable-track{
+  height:4px; border-radius:3px; background:var(--line-2);
+}
+.ctl input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none; appearance:none; width:15px; height:15px; border-radius:50%;
+  background:var(--accent); border:2px solid var(--surface); margin-top:-5.5px;
+  box-shadow:0 0 0 1px var(--line-2);
+}
+.ctl input[type=range]::-moz-range-track{height:4px; border-radius:3px; background:var(--line-2)}
+.ctl input[type=range]::-moz-range-thumb{
+  width:13px; height:13px; border-radius:50%; background:var(--accent);
+  border:2px solid var(--surface); box-shadow:0 0 0 1px var(--line-2);
+}
+.ctl input[type=range]:focus-visible{outline:2px solid var(--accent); outline-offset:4px;
+  border-radius:4px}
+.calc-assume{padding:0 20px 18px; margin:0; font-size:12px; color:var(--muted); max-width:72ch}
+.calc-assume b{font-family:"IBM Plex Mono",monospace; font-weight:500; color:var(--ink-2);
+  font-variant-numeric:tabular-nums}
+
+/* ---------- tables ---------- */
+.tscroll{overflow-x:auto; border:1px solid var(--line); border-radius:var(--r); background:var(--surface)}
+table{border-collapse:collapse; width:100%; font-size:13.5px}
+th,td{padding:9px 13px; text-align:right; white-space:nowrap; border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{text-align:left}
+thead th{font-family:"IBM Plex Mono",monospace; font-size:10.5px; letter-spacing:.09em;
+  text-transform:uppercase; color:var(--muted); font-weight:400;
+  background:var(--surface-2); position:sticky; top:0}
+tbody tr:last-child td{border-bottom:0}
+tbody tr.me{background:var(--accent-soft)}
+tbody tr.me td{font-weight:500}
+td.n{font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums}
+td.a{font-family:"IBM Plex Mono",monospace; font-size:12.5px}
+.rk{color:var(--muted); font-family:"IBM Plex Mono",monospace; font-size:12.5px}
+
+/* ---------- leaderboard controls ---------- */
+.lbctl{display:flex; gap:9px; align-items:center; margin-bottom:12px; flex-wrap:wrap}
+.lbctl input{flex:1 1 240px; min-width:0; font-family:"IBM Plex Mono",monospace; font-size:12.5px;
+  padding:8px 11px; border:1px solid var(--line-2); border-radius:8px;
+  background:var(--surface); color:var(--ink)}
+.lbctl input:focus{outline:2px solid var(--accent); outline-offset:1px}
+.pager{display:flex; gap:7px; align-items:center; margin-top:12px; flex-wrap:wrap}
+.pager button{font:inherit; font-size:12.5px; padding:6px 12px; border:1px solid var(--line-2);
+  background:var(--surface); color:var(--ink-2); border-radius:7px; cursor:pointer}
+.pager button:hover:not(:disabled){border-color:var(--accent); color:var(--accent)}
+.pager button:disabled{opacity:.42; cursor:default}
+.pager span{font-family:"IBM Plex Mono",monospace; font-size:12px; color:var(--muted)}
+
+/* ---------- timeline ---------- */
+.tl{position:relative; margin:0; padding:0; list-style:none}
+.tl::before{content:""; position:absolute; left:8px; top:10px; bottom:10px; width:2px;
+  background:linear-gradient(var(--line-2),var(--line)); border-radius:2px}
+.tl-item{position:relative; display:grid; grid-template-columns:34px 1fr; gap:14px;
+  padding-block:4px 20px}
+.tl-item:last-child{padding-bottom:0}
+.tl-mark{position:relative; width:18px; height:18px; margin-top:3px; border-radius:50%;
+  background:var(--surface); border:2px solid var(--line-2); justify-self:start;
+  display:grid; place-items:center}
+.tl-mark::after{content:""; width:7px; height:7px; border-radius:50%; background:var(--line-2)}
+.tl-item.bad .tl-mark{border-color:var(--bad)} .tl-item.bad .tl-mark::after{background:var(--bad)}
+.tl-item.warn .tl-mark{border-color:var(--warn)} .tl-item.warn .tl-mark::after{background:var(--warn)}
+.tl-item.neutral .tl-mark{border-color:var(--accent)} .tl-item.neutral .tl-mark::after{background:var(--accent)}
+.tl-item.ahead .tl-mark{border-style:dashed; border-color:var(--muted); background:var(--ground)}
+.tl-item.ahead .tl-mark::after{background:none}
+
+.tl-when{display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; margin-bottom:3px}
+.tl-date{font-family:"IBM Plex Mono",monospace; font-size:11.5px; color:var(--ink-2); font-weight:500}
+.tl-rel{font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--faint)}
+.tl-title{font-family:Archivo,sans-serif; font-size:15.5px; font-weight:600; letter-spacing:-.012em;
+  margin:0 0 5px; color:var(--ink)}
+.tl-sum{margin:0; font-size:13.5px; color:var(--ink-2); max-width:68ch}
+.tl-item.ahead .tl-title,.tl-item.ahead .tl-sum{color:var(--muted)}
+
+.tl-chips{display:flex; gap:7px; flex-wrap:wrap; margin-top:9px}
+.chip{display:inline-flex; align-items:baseline; gap:5px; padding:3px 9px; border-radius:6px;
+  background:var(--surface-2); border:1px solid var(--line); white-space:nowrap}
+.chip b{font-family:"IBM Plex Mono",monospace; font-size:12px; font-weight:500;
+  font-variant-numeric:tabular-nums; color:var(--ink)}
+.chip span{font-size:11px; color:var(--muted)}
+.tl-item.bad .chip:first-child{background:var(--bad-soft); border-color:transparent}
+.tl-item.bad .chip:first-child b{color:var(--bad)}
+.tl-item.warn .chip:first-child{background:var(--warn-soft); border-color:transparent}
+.tl-item.warn .chip:first-child b{color:var(--warn)}
+.tl-item.neutral .chip:first-child{background:var(--accent-soft); border-color:transparent}
+.tl-item.neutral .chip:first-child b{color:var(--accent)}
+
+details.tl-more{margin-top:10px}
+details.tl-more>summary{
+  font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.06em;
+  text-transform:uppercase; color:var(--muted); cursor:pointer; list-style:none;
+  display:inline-flex; align-items:center; gap:6px; padding:3px 0; user-select:none;
+}
+details.tl-more>summary::-webkit-details-marker{display:none}
+details.tl-more>summary::before{content:"+"; font-size:13px; line-height:1; width:12px;
+  text-align:center; color:var(--accent)}
+details.tl-more[open]>summary::before{content:"\2013"}
+details.tl-more>summary:hover{color:var(--accent)}
+details.tl-more>summary:focus-visible{outline:2px solid var(--accent); outline-offset:3px; border-radius:3px}
+details.tl-more p{margin:8px 0 0; font-size:13px; color:var(--ink-2); max-width:70ch;
+  padding-left:11px; border-left:2px solid var(--line)}
+
+.tl-now{display:grid; grid-template-columns:34px 1fr; gap:14px; align-items:center;
+  padding-block:2px 20px}
+.tl-now .bar{height:1px; background:var(--line-2); position:relative}
+.tl-now .lbl{position:absolute; left:0; top:-8px; background:var(--ground); padding-right:9px;
+  font-family:"IBM Plex Mono",monospace; font-size:10.5px; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--faint)}
+.tl-now .pip{width:18px; height:18px; justify-self:start; display:grid; place-items:center}
+.tl-now .pip::after{content:""; width:8px; height:8px; border-radius:50%;
+  background:var(--ink); opacity:.5}
+
+/* ---------- chart ---------- */
+.chartbox{background:var(--surface); border:1px solid var(--line); border-radius:var(--r);
+  padding:18px 16px 12px; box-shadow:var(--shadow)}
+.legend{display:flex; gap:16px; flex-wrap:wrap; margin-top:10px;
+  font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--muted)}
+.legend i{display:inline-block; width:9px; height:9px; border-radius:2px; margin-right:5px;
+  vertical-align:baseline}
+svg{display:block; width:100%; height:auto}
+
+footer{margin:56px 0 40px; padding-top:22px; border-top:1px solid var(--line);
+  font-size:12.5px; color:var(--muted)}
+footer p{margin:0 0 7px; max-width:74ch}
+footer a{color:var(--accent)}
+
+@media (max-width:760px){
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .tl-item,.tl-now{grid-template-columns:26px 1fr; gap:10px}
+  .tl::before{left:6px}
+  .tl-title{font-size:15px}
+  .stat .v{font-size:18px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
+/* ---------- single-page layout ----------
+   12-column board; panels that share a row stretch to the same height. */
+.board{display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); gap:20px; margin-top:20px; align-items:stretch}
+.a-look{grid-column:1/-1} .a-chart{grid-column:span 7} .a-src{grid-column:span 5}
+.a-top{grid-column:span 7} .a-conc{grid-column:span 5}
+@media (max-width:980px){ .board>*{grid-column:1/-1} }
+.panel{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:18px 20px;
+  min-width:0; display:flex; flex-direction:column}
+.panel.lookup{box-shadow:var(--shadow)}
+.panel .push{margin-top:auto}
+.panel .hint.push{padding-top:14px}
+@media (max-width:480px){ th,td{padding:9px 8px} .mini td,.mini th{padding:8px 6px} }
+.ph{display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:14px; flex-wrap:wrap}
+.ph h2{font-size:16.5px; font-weight:600; letter-spacing:-.015em}
+.ph .eyebrow{font-size:10.5px}
+.lookup form{margin-top:0}
+.lookup input{height:44px}
+.go{height:44px}
+.linkbtn{font:inherit; font-size:12.5px; color:var(--accent); background:none; border:0; padding:2px 0; cursor:pointer}
+.linkbtn:hover{color:var(--accent-ink); text-decoration:underline}
+.linkbtn:focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:3px}
+.mini td,.mini th{padding:8px 10px}
+.mini tbody tr{cursor:pointer}
+.mini tbody tr:hover td{background:var(--surface-2)}
+tr.clickable{cursor:pointer}
+tr.clickable:hover td{background:var(--surface-2)}
+tr.clickable:focus-visible td{outline:2px solid var(--accent); outline-offset:-2px}
+.evlist{display:grid; gap:10px}
+.ev{display:grid; grid-template-columns:4px 1fr; gap:12px; padding:12px 14px 12px 0; border:1px solid var(--line);
+  border-radius:8px; background:var(--surface); text-align:left; font:inherit; color:inherit; cursor:pointer; width:100%}
+.ev:hover{border-color:var(--line-2); background:var(--surface-2)}
+.ev:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+.ev .stripe{border-radius:8px 0 0 8px; background:var(--line-2)}
+.ev.bad .stripe{background:var(--bad)} .ev.warn .stripe{background:var(--warn)}
+.ev.neutral .stripe{background:var(--accent)} .ev.ahead .stripe{background:repeating-linear-gradient(var(--muted) 0 4px,transparent 4px 8px)}
+.ev .tl-title{font-size:14.5px; margin:2px 0 4px}
+.ev .tl-sum{font-size:13px}
+.ev .more{font-family:"IBM Plex Mono",monospace; font-size:10.5px; letter-spacing:.06em; text-transform:uppercase;
+  color:var(--accent); margin-top:8px; display:block}
+
+
+/* ---------- points by source ---------- */
+.srcbar{display:flex; height:12px; border-radius:6px; overflow:hidden; background:var(--surface-2); gap:2px}
+.srcbar span{display:block; min-width:2px}
+.srclegend{display:grid; gap:9px; margin-top:16px}
+.srcrow{display:grid; grid-template-columns:minmax(92px,auto) minmax(0,1fr) 52px; align-items:center; gap:12px;
+  font-size:13px; color:var(--ink-2)}
+.srcrow .nm{display:flex; align-items:center; gap:8px; min-width:0}
+.srcrow .bar{height:6px; border-radius:3px; background:var(--surface-2); overflow:hidden}
+.srcrow .bar i{display:block; height:100%; border-radius:3px}
+.srcrow b{font-family:"IBM Plex Mono",monospace; font-weight:500; font-size:12px; color:var(--ink); text-align:right;
+  font-variant-numeric:tabular-nums}
+.srclegend .it{display:flex; align-items:baseline; gap:7px; font-size:12.5px; color:var(--ink-2); min-width:0}
+.srclegend .it b{font-family:"IBM Plex Mono",monospace; font-weight:500; font-size:12px; color:var(--ink); margin-left:auto;
+  font-variant-numeric:tabular-nums}
+.sw{width:9px; height:9px; border-radius:2px; flex:none; align-self:center}
+.srct td.prod{padding-left:30px; color:var(--ink-2)}
+.srct tr.proto td{font-weight:600; background:var(--surface-2)}
+.srct .pname{display:inline-flex; align-items:center; gap:8px}
+td.share{white-space:nowrap}
+.meter{display:inline-block; width:64px; height:6px; border-radius:3px; background:var(--line); vertical-align:middle;
+  margin-left:10px; overflow:hidden}
+tr:not(.proto) .meter i{opacity:.55}
+.meter i{display:block; height:100%; border-radius:3px}
+.srcwrap{margin-top:18px}
+.srcwrap h3{font-size:15px; font-weight:600; letter-spacing:-.012em; margin:0 0 10px}
+
+/* ---------- concentration ---------- */
+.conc{display:grid; grid-template-columns:minmax(160px,250px) minmax(0,1fr); gap:24px; align-items:center; flex:1}
+.conc-chart svg{max-width:100%}
+.conc-legend{display:grid; gap:12px}
+.crow{display:grid; grid-template-columns:10px minmax(0,1fr) auto; gap:10px; align-items:center; font-size:13.5px; color:var(--ink-2)}
+.crow .sw{width:10px; height:10px}
+.crow .cl{display:flex; flex-direction:column; min-width:0}
+.crow small{font-family:"IBM Plex Mono",monospace; font-size:10.5px; color:var(--faint)}
+.crow b{font-family:"IBM Plex Mono",monospace; font-weight:500; font-size:13px; color:var(--ink); font-variant-numeric:tabular-nums}
+@media (max-width:480px){ .conc{grid-template-columns:minmax(0,1fr)} .conc-chart{max-width:200px; margin-inline:auto; width:100%} }
+/* ---------- notifications ---------- */
+.bellwrap{position:relative; display:inline-flex}
+.bell{position:relative}
+.badge{position:absolute; top:-6px; right:-6px; min-width:17px; height:17px; padding:0 4px; border-radius:9px;
+  background:var(--bad); color:#fff; font-family:"IBM Plex Mono",monospace; font-size:10px; font-weight:500; line-height:17px;
+  text-align:center; box-shadow:0 0 0 2px var(--ground)}
+.notif{position:absolute; top:calc(100% + 10px); right:0; z-index:40; width:min(440px,calc(100vw - 32px));
+  max-height:min(70vh,560px); overflow:auto; background:var(--ground); border:1px solid var(--line-2); border-radius:12px;
+  padding:14px; box-shadow:0 24px 60px -20px rgba(0,0,0,.55)}
+.notif-head{display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin:2px 2px 12px}
+.notif-head b{font-family:Archivo,sans-serif; font-size:15px; font-weight:600}
+.ev.unread .tl-date::after{content:"NEW"; margin-left:8px; padding:1px 6px; border-radius:4px; background:var(--accent-soft);
+  color:var(--accent); font-size:9.5px; letter-spacing:.08em}
+@media (max-width:640px){ .notif{position:fixed; top:58px; left:16px; right:16px; width:auto} }
+.newsbar{border-bottom:1px solid var(--line); background:var(--surface)}
+.newsin{display:flex; align-items:center; gap:12px; padding-block:10px; min-width:0}
+.nstripe{width:4px; align-self:stretch; border-radius:2px; background:var(--accent); flex:none}
+.newsbar.bad .nstripe{background:var(--bad)} .newsbar.warn .nstripe{background:var(--warn)}
+.ntag{font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--accent);
+  background:var(--accent-soft); padding:2px 7px; border-radius:4px; flex:none}
+.ntext{flex:1; min-width:0; font-size:13.5px; color:var(--ink-2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.ntext b{color:var(--ink); font-weight:600; margin-right:8px}
+.nclose{position:static; flex:none}
+@media (max-width:640px){ .ntext{white-space:normal} .ntext span{display:none} }
+
+[hidden]{display:none !important}
+.iconbtn{width:34px; height:32px; padding:0; display:inline-grid; place-items:center}
+.iconbtn svg{width:17px; height:17px}
+:root:not([data-theme="light"]) .i-moon{display:none}
+:root[data-theme="light"] .i-sun{display:none}
+/* ---------- byline + referral ---------- */
+.byline{font-family:"IBM Plex Mono",monospace; font-size:11.5px; color:var(--accent); text-decoration:none; white-space:nowrap}
+.byline:hover{color:var(--accent-ink); text-decoration:underline}
+.byline:focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:3px}
+.foot a{color:var(--accent)}
+.refcard{margin-top:20px; flex-direction:row}
+.refbody p{margin:8px 0 0; font-size:14px; color:var(--ink-2); display:flex; flex-wrap:wrap; align-items:center; gap:8px}
+.refbody p.hint{display:block; font-size:12.5px; color:var(--muted); max-width:72ch}
+.reflink{display:inline-flex; align-items:center; height:auto; padding:7px 14px; font-size:13px; text-decoration:none}
+.refcode{font-family:"IBM Plex Mono",monospace; font-weight:500; font-size:15px; color:var(--ink); background:var(--surface-2);
+  border:1px dashed var(--line-2); border-radius:6px; padding:3px 10px; user-select:all}
+
+/* ---------- dialogs ---------- */
+dialog.pop{border:1px solid var(--line-2); border-radius:14px; padding:0; background:var(--ground); color:var(--ink);
+  width:min(760px,calc(100vw - 32px)); max-height:calc(100dvh - 48px); box-shadow:0 24px 60px -20px rgba(0,0,0,.45)}
+dialog.pop.wide{width:min(1280px,calc(100vw - 48px)); height:calc(100dvh - 48px)}
+dialog.pop:focus{outline:none}
+@media (max-width:760px){ dialog.pop.wide{width:calc(100vw - 24px); height:calc(100dvh - 24px)} }
+dialog.pop::backdrop{background:rgba(8,16,18,.52); backdrop-filter:blur(2px)}
+.pop-head{position:sticky; top:0; z-index:2; display:flex; align-items:center; gap:12px; padding:14px 18px;
+  background:color-mix(in srgb,var(--ground) 92%,transparent); backdrop-filter:blur(8px); border-bottom:1px solid var(--line)}
+.pop-head h2{font-size:17px; font-weight:600; letter-spacing:-.015em; margin-right:auto; min-width:0; overflow-wrap:anywhere}
+.xbtn{font:inherit; font-size:18px; line-height:1; width:32px; height:32px; border-radius:8px; border:1px solid var(--line-2);
+  background:var(--surface); color:var(--ink-2); cursor:pointer; flex:none}
+.xbtn:hover{border-color:var(--accent); color:var(--accent)}
+.xbtn:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+.pop-body{padding:18px}
+.pop-body .projwrap{margin:0; padding:0; border:0; background:none; box-shadow:none}
+.wgrid{display:grid; grid-template-columns:minmax(0,1.15fr) minmax(0,1fr); gap:28px; align-items:start}
+.wgrid .srcwrap{margin-top:0}
+#dlg-wallet #result{margin-top:0}
+@media (max-width:980px){ .wgrid{grid-template-columns:minmax(0,1fr)} }
+th.l,td.l{text-align:left}
+.addr-short{display:none}
+@media (max-width:900px){ .addr-full{display:none} .addr-short{display:inline} }
+.lbsearch{position:relative; display:flex; align-items:center; margin:0}
+#dlg-standings .pop-head{flex-wrap:wrap}
+#dlg-standings .pop-head h2{margin-right:0; flex:none}
+#dlg-standings .lbsearch{flex:1 1 360px; max-width:720px; margin-left:auto}
+@media (max-width:640px){
+  #dlg-standings .pop-head h2{margin-right:auto}
+  #dlg-standings .lbsearch{order:3; flex-basis:100%; max-width:none}
+}
+.lbsearch .mag{position:absolute; left:14px; width:17px; height:17px; color:var(--muted); pointer-events:none}
+.lbsearch input{width:100%; height:46px; box-sizing:border-box; padding:0 44px 0 42px; font-family:"IBM Plex Mono",monospace;
+  font-size:13.5px; border:1px solid var(--line-2); border-radius:10px; background:var(--surface); color:var(--ink);
+  -webkit-appearance:none; appearance:none}
+.lbsearch input::-webkit-search-cancel-button{display:none}
+.lbsearch input:focus{outline:2px solid var(--accent); outline-offset:1px; border-color:var(--accent)}
+.xclear{position:absolute; right:8px; width:30px; height:30px; border:0; border-radius:7px; background:var(--surface-2);
+  color:var(--ink-2); font-size:17px; line-height:1; cursor:pointer}
+.xclear:hover{color:var(--accent)}
+.lbstatus{margin:-4px 0 12px; min-height:18px; font-family:"IBM Plex Mono",monospace; font-size:11.5px; color:var(--muted)}
+tr.hit td{background:var(--accent-soft) !important}
+tr.hit td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
+.jump .tbtn{padding-inline:14px}
+.pop-body p.lead{margin:0 0 12px; font-size:14px; color:var(--ink-2); max-width:68ch}
+.pop-body .about p{margin:0 0 12px; max-width:68ch; font-size:13.5px; color:var(--ink-2)}
+.ev-body{font-size:14px; color:var(--ink-2); max-width:68ch; margin:14px 0 0}
+.jump{display:flex; gap:7px; align-items:center}
+.jump input{width:92px; font-family:"IBM Plex Mono",monospace; font-size:12.5px; padding:7px 9px; border:1px solid var(--line-2);
+  border-radius:8px; background:var(--surface); color:var(--ink)}
+.jump input:focus{outline:2px solid var(--accent); outline-offset:1px}
+.copy{font:inherit; font-size:11.5px; padding:3px 9px; border-radius:6px; border:1px solid var(--line-2); background:var(--surface);
+  color:var(--ink-2); cursor:pointer}
+.copy:hover{border-color:var(--accent); color:var(--accent)}
+.foot{margin:28px 0 32px; font-size:12px; color:var(--muted); display:flex; gap:8px 16px; flex-wrap:wrap; align-items:baseline}
+.foot .linkbtn{font-size:12px}
+@media (max-width:760px){ .pop-body{padding:14px} .pop-head{padding:12px 14px} }
+</style>
+<header class="top">
+  <div class="wrap topbar">
+    <span class="brand"><span class="dot"></span><b>OnRe Points Ledger</b></span>
+    <span class="asof" id="asof"></span>
+    <a class="byline" id="byline" href="#" target="_blank" rel="noopener" hidden></a>
+    <span class="bellwrap" id="events-sec">
+      <button class="tbtn iconbtn bell" id="bell" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="notif" aria-label="What changed">
+        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2.6a5 5 0 0 0-5 5v2.7c0 .7-.3 1.4-.8 1.9l-.9.9h13.4l-.9-.9c-.5-.5-.8-1.2-.8-1.9V7.6a5 5 0 0 0-5-5z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8 15.4a2 2 0 0 0 4 0" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        <span class="badge" id="bellcount" hidden></span>
+      </button>
+      <div class="notif" id="notif" role="dialog" aria-label="What changed" hidden>
+        <div class="notif-head"><b>What changed</b><span class="eyebrow">Ledger-wide events</span></div>
+        <div class="evlist" id="evlist"></div>
+      </div>
+    </span>
+    <button class="tbtn" id="aboutbtn" type="button">About</button>
+    <button class="tbtn iconbtn" id="theme" type="button" aria-label="Switch to light theme" title="Switch to light theme">
+      <svg class="i-sun" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="3.6" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M10 1.8v2.1M10 16.1v2.1M1.8 10h2.1M16.1 10h2.1M4.2 4.2l1.5 1.5M14.3 14.3l1.5 1.5M4.2 15.8l1.5-1.5M14.3 5.7l1.5-1.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+      <svg class="i-moon" viewBox="0 0 20 20" aria-hidden="true"><path d="M16.2 12.6A6.6 6.6 0 0 1 7.4 3.8a6.6 6.6 0 1 0 8.8 8.8z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
+    </button>
+  </div>
+</header>
+
+<div class="newsbar" id="newsbar" hidden>
+  <div class="wrap newsin">
+    <span class="nstripe" id="nstripe" aria-hidden="true"></span>
+    <span class="ntag">New</span>
+    <span class="ntext"><b id="ntitle"></b><span id="nsum"></span></span>
+    <button class="linkbtn" id="nread" type="button">Read</button>
+    <button class="xclear nclose" id="nclose" type="button" aria-label="Dismiss">&times;</button>
+  </div>
+</div>
+
+<main class="wrap">
+  <div class="stats" id="stats"></div>
+
+  <div class="board">
+    <div class="panel lookup a-look">
+      <div class="ph"><h2>Find a wallet</h2><span class="eyebrow" id="lookcount"></span></div>
+      <form id="lform" autocomplete="off">
+        <input id="waddr" name="waddr" type="text" spellcheck="false"
+               placeholder="Paste a Solana wallet address" aria-label="Solana wallet address">
+        <button class="go" type="submit">Look up</button>
+      </form>
+      <p class="hint" id="hint"></p>
+      <p class="err" id="err" hidden></p>
+    </div>
+
+    <div class="panel a-chart">
+      <div class="ph"><h2>Daily emission</h2><span class="eyebrow">Last 30 snapshots</span></div>
+      <div id="chart"></div>
+      <div class="legend push">
+        <span><i style="background:var(--accent)"></i>Net daily change</span>
+        <span><i style="background:var(--bad)"></i>Supply fell (clawback)</span>
+      </div>
+    </div>
+
+    <div class="panel a-src" id="src-sec">
+      <div class="ph"><h2>Where points come from</h2><button class="linkbtn" id="srcbtn" type="button">By product</button></div>
+      <div class="srcbar" id="srcbar" role="img"></div>
+      <div class="srclegend" id="srclegend"></div>
+      <p class="hint push" id="srcnote"></p>
+    </div>
+
+    <div class="panel a-top">
+      <div class="ph"><h2>Top 10</h2><button class="linkbtn" id="allbtn" type="button"></button></div>
+      <div class="tscroll" style="border:0">
+        <table class="mini">
+          <thead><tr><th>Rank</th><th class="l">Wallet</th><th>Points</th><th>Per day</th></tr></thead>
+          <tbody id="top10"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel a-conc">
+      <div class="ph"><h2>Who holds the points</h2><span class="eyebrow">By rank</span></div>
+      <div class="conc">
+        <div class="conc-chart" id="conc-chart"></div>
+        <div class="conc-legend" id="conc-legend"></div>
+      </div>
+      <p class="hint push" id="conc-note"></p>
+    </div>
+
+  </div>
+
+  <div class="panel refcard" id="refcard" hidden>
+    <div class="refbody">
+      <span class="eyebrow">Not on OnRe yet?</span>
+      <p>Sign up with this referral code: <span class="refcode" id="refcode"></span>
+        <button class="copy" type="button" id="refcopy">Copy</button>
+        <a class="go reflink" id="reflink" href="#" target="_blank" rel="noopener" hidden>Sign up on OnRe</a></p>
+      <p class="hint">This is the referral code of the person who builds this page. They earn referral points from wallets that sign up with it. The ledger works the same whether or not you use it.</p>
+    </div>
+  </div>
+
+  <div class="foot">
+    <span>Community-built from public API data. Not affiliated with OnRe. Not financial advice.</span>
+    <span id="footby" hidden>Built by <a id="footx" href="#" target="_blank" rel="noopener"></a></span>
+    <button class="linkbtn" id="aboutbtn2" type="button">How this works</button>
+  </div>
+</main>
+
+<dialog tabindex="-1" class="pop wide" id="dlg-wallet" aria-labelledby="dw-title">
+  <div class="pop-head"><h2 id="dw-title">Wallet</h2><button class="xbtn" type="button" data-close aria-label="Close">&times;</button></div>
+  <div class="pop-body" id="result"></div>
+</dialog>
+
+<dialog tabindex="-1" class="pop wide" id="dlg-standings" aria-labelledby="ds-title">
+  <div class="pop-head"><h2 id="ds-title">Full standings</h2>
+    <form class="lbsearch" id="lbform" role="search" autocomplete="off">
+      <svg class="mag" viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M13 13l4.5 4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      <input id="lbq" type="search" spellcheck="false" placeholder="Search by wallet address, part of one, or a rank like 98" aria-label="Search standings by address or rank">
+      <button class="xclear" id="lbclear" type="button" aria-label="Clear search" hidden>&times;</button>
+    </form>
+    <button class="xbtn" type="button" data-close aria-label="Close">&times;</button></div>
+  <div class="pop-body">
+    <p class="lead" id="lbsub"></p>
+    <p class="lbstatus" id="lbstatus" aria-live="polite"></p>
+    <div class="tscroll">
+      <table>
+        <thead><tr><th>Rank</th><th class="l">Wallet</th><th>Points</th><th>Share</th><th>Per day</th></tr></thead>
+        <tbody id="lbbody"></tbody>
+      </table>
+    </div>
+    <div class="pager">
+      <button id="pprev" type="button">Previous</button>
+      <button id="pnext" type="button">Next</button>
+      <span id="pinfo"></span>
+    </div>
+  </div>
+</dialog>
+
+<dialog tabindex="-1" class="pop wide" id="dlg-sources" aria-labelledby="dsrc-title">
+  <div class="pop-head"><h2 id="dsrc-title">Where points come from, by product</h2><button class="xbtn" type="button" data-close aria-label="Close">&times;</button></div>
+  <div class="pop-body">
+    <p class="lead" id="srclead"></p>
+    <div class="tscroll"><table class="srct" id="srctable"></table></div>
+  </div>
+</dialog>
+
+<dialog tabindex="-1" class="pop" id="dlg-event" aria-labelledby="de-title">
+  <div class="pop-head"><h2 id="de-title">Event</h2><button class="xbtn" type="button" data-close aria-label="Close">&times;</button></div>
+  <div class="pop-body" id="evbody"></div>
+</dialog>
+
+<dialog tabindex="-1" class="pop" id="dlg-about" aria-labelledby="da-title">
+  <div class="pop-head"><h2 id="da-title">How this works</h2><button class="xbtn" type="button" data-close aria-label="Close">&times;</button></div>
+  <div class="pop-body about">
+    <p><strong>Snapshots, not live data.</strong> OnRe's rewards API rejects requests from browsers, so this page
+    cannot query it live. Every wallet is captured server-side once a day and the whole ledger is built into
+    this one page. It does not update on its own; check the date in the header.</p>
+    <p><strong>Where the rates come from.</strong> Each wallet's daily credit is measured by differencing two full
+    snapshots of every wallet, normalised by the real time between them. Points post in batches, so a wallet whose
+    batch landed outside the window can read as zero for a while.</p>
+    <p><strong>Projections are arithmetic.</strong> They carry today's measured rates forward unchanged. Reward
+    programmes change without notice, so treat every projection as "if today holds", not as a forecast.</p>
+    <p><strong>Not affiliated with OnRe.</strong> Community-built from public API data. Nothing here is financial advice.</p>
+  </div>
+</dialog>

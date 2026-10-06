@@ -1,0 +1,44 @@
+[
+ {
+  "date": "2026-09-15",
+  "kind": "bad",
+  "title": "Clawback: 19 wallets zeroed",
+  "summary": "The total points supply fell for the first time on record.",
+  "impact": [
+   [
+    "-3.83B",
+    "supply"
+   ],
+   [
+    "19",
+    "wallets zeroed"
+   ],
+   [
+    "3.76B",
+    "points removed"
+   ]
+  ],
+  "body": "The system total fell from 224.66B to 220.83B, the first decline since this record began. Nineteen wallets holding 3,760,056,495 points between them were set to exactly zero and delisted. Comparing the two snapshots either side shows they had been frozen first, gaining 5,934 points combined across the previous day, so a wallet whose accrual stops is the visible precursor to a wipe. OnRe stated that the criterion was wallets identified as having intentionally taken advantage, that points earned through normal participation were unchanged, and that the review was complete. A snapshot of the largest wallets cannot see smaller ones, so the full clawback was likely larger than the figure visible here."
+ },
+ {
+  "date": "2026-10-03",
+  "kind": "warn",
+  "title": "Two of the three largest wallets throttled",
+  "summary": "The #1 and #3 wallets now earn about one ten-thousandth of their previous daily credit; their balances are untouched so far.",
+  "impact": [
+   [
+    "0.0001x",
+    "multiplier"
+   ],
+   [
+    "27.4B",
+    "points held"
+   ],
+   [
+    "11.0%",
+    "of supply"
+   ]
+  ],
+  "body": "From 2026-10-03 OnRe's public API lists a global multiplier of 0.0001 on DTjNdfYm (#1, 19.67B points) and AR6xVAao (#3, 7.71B). Their combined daily credit fell from about 58M to about 6K, exactly in line with that multiplier, while every point they already held stayed in place. OnRe has not said why. Before the 09-15 clawback the zeroed wallets were frozen first, so a stopped wallet has been the warning sign of a wipe once before, but that is an inference from one prior event and could be wrong here: a throttle is not a zeroing, and these balances may simply stay. If they were zeroed, every other wallet's share of supply would rise by about 12%."
+ }
+]

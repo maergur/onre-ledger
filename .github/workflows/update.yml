@@ -1,0 +1,57 @@
+name: Update ledger
+
+# Hourly: fetch a fresh snapshot of OnRe's public leaderboard, rebuild the page,
+# and publish it to the `site` branch, which Vercel deploys.
+# Snapshots live on the `data` branch, force-pushed as a single commit so the
+# repo's history does not grow with every run.
+on:
+  schedule:
+    - cron: "7 * * * *"
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["src/**", "scripts/**", ".github/workflows/**"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ledger
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      REMOTE: https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Restore snapshot store
+        run: |
+          git clone --depth 1 --branch data "$REMOTE" store 2>/dev/null || mkdir -p store
+          rm -rf store/.git
+
+      - name: Fetch snapshot
+        run: python3 scripts/fetch.py --store store
+
+      - name: Build page
+        run: python3 scripts/build.py --data store --series store/series.json --src src --out out
+
+      - name: Publish data and site branches
+        run: |
+          git config --global user.name  "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          stamp="$(date -u +%Y-%m-%dT%H:%MZ)"
+          publish () {   # $1 = directory, $2 = branch
+            ( cd "$1" && git init -q -b "$2" && git add -A \
+              && git commit -q -m "$2: $stamp" && git push -q -f "$REMOTE" "$2" )
+          }
+          publish store data
+          mkdir -p site && cp out/standalone.html site/index.html && cp vercel.json site/
+          publish site site
