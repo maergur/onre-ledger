@@ -463,6 +463,18 @@ tr:not(.proto) .meter i{opacity:.55}
   font-family:"IBM Plex Mono",monospace; font-weight:500; font-size:15px; letter-spacing:.06em; color:var(--ink); background:var(--surface-2);
   border:1px dashed var(--line-2); border-radius:6px; padding:3px 10px; user-select:all}
 
+/* ---------- referral bar (top, once) ---------- */
+.refbar{display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; margin-top:20px; padding:10px 14px 10px 16px;
+  border:1px solid color-mix(in srgb,var(--accent) 40%,var(--line)); border-radius:var(--r);
+  background:linear-gradient(90deg,var(--accent-soft),var(--surface) 60%)}
+.refbar .reftext{font-size:14px; color:var(--ink-2)}
+.refbar .reftext b{font-family:"Plus Jakarta Sans",Inter,sans-serif; color:var(--ink); font-weight:600; margin-right:4px}
+.refbar .refcode{height:32px; font-size:14px; padding:0 10px}
+.refbar .copy{height:32px}
+.refbar .reflink{height:32px; padding:0 14px; font-size:13.5px}
+.refbar .refnote{margin:0 0 0 auto; font-size:12px; color:var(--muted)}
+@media (max-width:640px){ .refbar .refnote{margin-left:0; flex-basis:100%} }
+
 /* ---------- tabs ---------- */
 .tabs{display:flex; gap:4px; margin-top:20px; padding:4px; border:1px solid var(--line); border-radius:12px;
   background:var(--surface); width:max-content; max-width:100%}
@@ -589,11 +601,19 @@ tr.hit td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
 </div>
 
 <main class="wrap">
+  <div class="refbar" id="refcard" hidden>
+    <span class="reftext"><b>New to OnRe?</b> Join with my code</span>
+    <span class="refcode" id="refcode"></span>
+    <button class="copy" type="button" id="refcopy">Copy</button>
+    <a class="go reflink" id="reflink" href="#" target="_blank" rel="noopener" hidden>Sign up <span aria-hidden="true">→</span></a>
+    <span class="refnote">I earn referral points from it.</span>
+  </div>
+
   <div class="stats" id="stats"></div>
 
   <nav class="tabs" role="tablist" aria-label="Sections">
-    <button class="tab" role="tab" type="button" id="tab-btn-ledger" aria-controls="tab-ledger" aria-selected="true">Points ledger</button>
-    <button class="tab" role="tab" type="button" id="tab-btn-airdrop" aria-controls="tab-airdrop" aria-selected="false" tabindex="-1">Airdrop estimator</button>
+    <button class="tab" role="tab" type="button" id="tab-btn-ledger" aria-controls="tab-ledger" aria-selected="true">Points Ledger</button>
+    <button class="tab" role="tab" type="button" id="tab-btn-airdrop" aria-controls="tab-airdrop" aria-selected="false" tabindex="-1">Airdrop Estimator</button>
   </nav>
 
   <div class="tabpanel" id="tab-ledger" role="tabpanel" aria-labelledby="tab-btn-ledger">
@@ -618,23 +638,11 @@ tr.hit td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
       <div class="ph"><h2>Find a wallet</h2><span class="eyebrow" id="lookcount"></span></div>
       <form id="lform" autocomplete="off">
         <input id="waddr" name="waddr" type="text" spellcheck="false"
-               placeholder="Paste a Solana wallet address" aria-label="Solana wallet address">
+               placeholder="Paste a wallet address or .sol name" aria-label="Solana wallet address or .sol name">
         <button class="go" type="submit">Look up</button>
       </form>
       <p class="hint" id="hint"></p>
       <p class="err" id="err" hidden></p>
-    </div>
-
-    <div class="panel refcard a-ref" id="refcard" hidden>
-      <div class="refrow">
-        <div class="reftext"><b>Joining OnRe? Come in with us.</b><span>If this ledger saved you a spreadsheet or two, sign up with my code. It costs you nothing and keeps this page going.</span></div>
-        <div class="refactions">
-          <span class="refcode" id="refcode"></span>
-          <button class="copy" type="button" id="refcopy">Copy</button>
-          <a class="go reflink" id="reflink" href="#" target="_blank" rel="noopener" hidden>Sign up on OnRe <span aria-hidden="true">→</span></a>
-        </div>
-      </div>
-      <p class="refnote">Full transparency: I’m the person who builds this page, and I earn referral points from wallets that join with this code. The ledger stays free and works exactly the same whether you use it or not. Thank you either way.</p>
     </div>
 
     <div class="panel a-chart">
@@ -673,8 +681,8 @@ tr.hit td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
       <div class="ph"><h2>Speculate on your airdrop</h2><span class="eyebrow">Hypothetical · not financial advice</span></div>
       <div class="airgrid">
         <div class="airin">
-          <label class="airlbl" for="air-who">Wallet address or number of points</label>
-          <input id="air-who" type="text" spellcheck="false" autocomplete="off" placeholder="Paste a wallet, or type points like 25M">
+          <label class="airlbl" for="air-who">Wallet, .sol name or number of points</label>
+          <input id="air-who" type="text" spellcheck="false" autocomplete="off" placeholder="Wallet, .sol name, or points like 25M">
           <p class="hint" id="air-whohint"></p>
           <div class="airctls">
             <div class="ctl"><label for="air-fdv">Fully diluted valuation <b id="air-fdv-v"></b></label>
@@ -695,8 +703,6 @@ tr.hit td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
           <div class="tscroll"><table class="airt" id="air-table"></table></div>
         </div>
       </div>
-      <p class="aircta" id="air-cta" hidden>Not farming OnRe yet? Join with my referral code <span class="refcode sm" id="air-code"></span>
-        <a class="linkbtn" id="air-link" href="#" target="_blank" rel="noopener">Sign up on OnRe →</a></p>
       <p class="refnote" id="air-note"></p>
     </div>
 
@@ -719,7 +725,7 @@ tr.hit td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
   <div class="pop-head"><h2 id="ds-title">Full standings</h2>
     <form class="lbsearch" id="lbform" role="search" autocomplete="off">
       <svg class="mag" viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M13 13l4.5 4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-      <input id="lbq" type="search" spellcheck="false" placeholder="Search by wallet address, part of one, or a rank like 98" aria-label="Search standings by address or rank">
+      <input id="lbq" type="search" spellcheck="false" placeholder="Search by address, .sol name, or a rank like 98" aria-label="Search standings by address or rank">
       <button class="xclear" id="lbclear" type="button" aria-label="Clear search" hidden>&times;</button>
     </form>
     <button class="xbtn" type="button" data-close aria-label="Close">&times;</button></div>
@@ -764,6 +770,8 @@ tr.hit td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
     batch landed outside the window can read as zero for a while.</p>
     <p><strong>Projections are arithmetic.</strong> They carry today's measured rates forward unchanged. Reward
     programmes change without notice, so treat every projection as "if today holds", not as a forecast.</p>
+    <p><strong>.sol names.</strong> When you search for a .sol name, or open a wallet, your browser asks the public
+    Solana Name Service (sns.id) which wallet owns the name, or which name the wallet uses. Nothing else is sent anywhere.</p>
     <p><strong>Not affiliated with OnRe.</strong> Community-built from public API data. Nothing here is financial advice.</p>
   </div>
 </dialog>

@@ -16,6 +16,34 @@ function pct(x,d){return (x*100).toFixed(d===undefined?4:d)+"%";}
 function short(a){return a.length>14?a.slice(0,6)+"…"+a.slice(-5):a;}
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){
   return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
+/* ---------- Solana Name Service (.sol): name -> wallet, and a wallet's primary name ---------- */
+var SNS="https://sdk-proxy.sns.id", snsCache={}, revCache={};
+function isSol(v){ return /^[a-z0-9_-]+(\.[a-z0-9_-]+)*\.sol$/i.test((v||"").trim()); }
+function snsFetch(path){
+  var ctl=window.AbortController?new AbortController():null, t=ctl?setTimeout(function(){ctl.abort();},8000):0;
+  return fetch(SNS+path,ctl?{signal:ctl.signal}:{}).then(function(r){ clearTimeout(t); return r.json(); },
+    function(e){ clearTimeout(t); throw e; });
+}
+function solKey(v){ return v.trim().toLowerCase().replace(/\.sol$/,""); }
+function resolveSol(v){
+  var k=solKey(v);
+  if(snsCache[k])return Promise.resolve(snsCache[k]);
+  return snsFetch("/resolve/"+encodeURIComponent(k)).then(function(j){
+    if(j&&j.s==="ok"&&typeof j.result==="string"){ snsCache[k]=j.result; return j.result; }
+    throw new Error("notfound");
+  });
+}
+function primarySol(addr){
+  if(addr in revCache)return Promise.resolve(revCache[addr]);
+  return snsFetch("/favorite-domain/"+addr).then(function(j){
+    var r=(j&&j.s==="ok"&&j.result&&j.result.reverse)?j.result.reverse+".sol":null; revCache[addr]=r; return r;
+  }).catch(function(){ return null; });
+}
+function solErr(v,e){
+  return e&&e.message==="notfound" ? "No wallet owns "+v.trim().toLowerCase()+"."
+    : "Couldn’t reach the .sol name service right now. Paste the wallet address instead.";
+}
+
 function compact(x){
   var s=x<0?"-":""; x=Math.abs(x);
   if(x>=1e9)return s+(x/1e9).toFixed(2)+"B";
@@ -470,7 +498,7 @@ function wireCalc(points,rate){
   ids.forEach(function(k){el[k].addEventListener("input",run);});
   run();
 }
-function openWallet(idx){
+function openWallet(idx,solName){
   var addr=addrAt(idx), p=ptsAt(idx), rate=rtsAt(idx), rank=idx+1;
   var share=p/D.system, pctile=(1-idx/N)*100, known=seenAt(idx)===1;
   var st = !known ? ['flat','New in this window']
@@ -495,6 +523,7 @@ function openWallet(idx){
   document.getElementById("result").innerHTML=
     '<div class="projwrap wgrid"><div class="wmain">'+
       '<div class="addr-line"><span class="a mono" id="w-addr">'+addr+'</span>'+
+      '<span class="pill flat solpill" id="w-sol" hidden></span>'+
       '<button class="copy" type="button" id="w-copy">Copy</button>'+
       '<span class="pill '+st[0]+'">'+st[1]+'</span></div>'+
       '<div class="rgrid">'+
@@ -521,14 +550,26 @@ function openWallet(idx){
     try{ navigator.clipboard.writeText(addr).then(function(){b.textContent="Copied";},sel); }catch(e){ sel(); }
   };
   openDlg("dlg-wallet","w-"+addr);
+  var sp=document.getElementById("w-sol");
+  function setSol(nm){ if(nm&&document.getElementById("w-addr")&&document.getElementById("w-addr").textContent===addr){ sp.textContent=nm; sp.hidden=false; } }
+  if(solName)setSol(solName); else primarySol(addr).then(setSol);
 }
 
 /* ---------- lookup ---------- */
 var errEl=document.getElementById("err"), byAddr={};
 for(var i=0;i<N;i++)byAddr[addrAt(i)]=i;
 function doLookup(v){
-  v=(v||"").trim(); errEl.hidden=true;
+  v=(v||"").trim(); errEl.hidden=true; errEl.style.color="";
   if(!v)return false;
+  if(isSol(v)){
+    errEl.textContent="Looking up "+v.toLowerCase()+"…"; errEl.style.color="var(--muted)"; errEl.hidden=false;
+    resolveSol(v).then(function(addr){
+      errEl.style.color="";
+      if(byAddr[addr]===undefined){ errEl.textContent=v.toLowerCase()+" belongs to "+short(addr)+", which doesn’t hold any OnRe points in this snapshot."; return; }
+      errEl.hidden=true; openWallet(byAddr[addr],v.toLowerCase());
+    },function(e){ errEl.style.color=""; errEl.textContent=solErr(v,e); });
+    return true;
+  }
   var idx=byAddr[v];
   if(idx===undefined){
     errEl.textContent="That address isn't in this snapshot. Check it was copied in full, or the wallet may not hold any points yet.";
@@ -582,6 +623,7 @@ function runSearch(){
   var raw=lbq.value.trim(), q=raw.toLowerCase(), rk=/^#?\d+$/.test(raw)?parseInt(raw.replace("#",""),10):NaN;
   lbclear.hidden=!raw; hit=-1;
   if(!raw){ filtered=null; page=0; lbstatus.textContent=""; renderLB(); return; }
+  if(isSol(raw)){ lbstatus.textContent="Press Enter to look up "+raw.toLowerCase(); return; }
   if(!isNaN(rk)){
     filtered=null;
     if(rk<1||rk>N){ lbstatus.textContent="Ranks run from 1 to "+n(N)+"."; renderLB(); return; }
@@ -602,7 +644,20 @@ function runSearch(){
 }
 lbq.addEventListener("input",function(){ clearTimeout(qt); qt=setTimeout(runSearch,140); });
 document.getElementById("lbform").addEventListener("submit",function(e){
-  e.preventDefault(); clearTimeout(qt); runSearch();
+  e.preventDefault(); clearTimeout(qt);
+  var raw=lbq.value.trim();
+  if(isSol(raw)){
+    lbstatus.textContent="Looking up "+raw.toLowerCase()+"…";
+    resolveSol(raw).then(function(addr){
+      var i=byAddr[addr];
+      if(i===undefined){ lbstatus.textContent=raw.toLowerCase()+" belongs to "+short(addr)+", which holds no OnRe points in this snapshot."; return; }
+      filtered=null; hit=i; page=Math.floor(i/PAGE); renderLB(); scrollToHit();
+      lbstatus.textContent=raw.toLowerCase()+" is rank #"+n(i+1)+" · press Enter again to open it";
+      lbq.value=addr; lbclear.hidden=false;
+    },function(e){ lbstatus.textContent=solErr(raw,e); });
+    return;
+  }
+  runSearch();
   if(hit>=0)openWallet(hit);
 });
 lbclear.onclick=function(){ lbq.value=""; runSearch(); lbq.focus(); };
@@ -636,11 +691,21 @@ function rowOpen(e){
     return parseFloat(m[1])*({k:1e3,m:1e6,b:1e9}[(m[2]||"").toLowerCase()]||1);
   }
   function resolve(){
-    var v=who.value.trim();
+    var v=who.value.trim(), nm="";
+    if(isSol(v)){
+      var k=solKey(v);
+      if(snsCache[k]){ nm=v.toLowerCase(); v=snsCache[k];
+        if(byAddr[v]===undefined){ src={pts:EXAMPLE,rate:0,label:"example"}; hint.textContent=nm+" belongs to "+short(v)+", which holds no OnRe points yet; showing the 10M-point example."; return; } }
+      else {
+        src={pts:EXAMPLE,rate:0,label:"example"}; hint.textContent="Looking up "+v.toLowerCase()+"…";
+        resolveSol(v).then(function(){ run(); },function(e){ hint.textContent=solErr(v,e); });
+        return;
+      }
+    }
     if(!v){ src={pts:EXAMPLE,rate:0,label:"example"}; hint.textContent="Showing an example of 10M points. Paste your wallet to use your own."; return; }
     if(byAddr[v]!==undefined){
       var i=byAddr[v]; src={pts:ptsAt(i), rate:rtsAt(i), label:"wallet"};
-      hint.textContent="Rank #"+n(i+1)+" · "+n(ptsAt(i))+" points · earning "+(rtsAt(i)>0?"+"+compact(rtsAt(i))+"/day":"nothing in the last "+(Math.round(D.rateDays*10)/10)+" days");
+      hint.textContent=(nm?nm+" · ":"")+"Rank #"+n(i+1)+" · "+n(ptsAt(i))+" points · earning "+(rtsAt(i)>0?"+"+compact(rtsAt(i))+"/day":"nothing in the last "+(Math.round(D.rateDays*10)/10)+" days");
       return;
     }
     var p=parsePts(v);
@@ -724,10 +789,7 @@ TABS.forEach(function(t,i){
       try{ navigator.clipboard.writeText(ref.code).then(function(){b.textContent="Copied";},sel); }catch(e){ sel(); }
     };
     document.getElementById("refcard").hidden=false;
-    document.getElementById("air-code").textContent=ref.code;
-    if(ref.url&&/^https:\/\//.test(ref.url))document.getElementById("air-link").href=ref.url;
-    else document.getElementById("air-link").hidden=true;
-    document.getElementById("air-cta").hidden=false;
+
   }
 })();
 
