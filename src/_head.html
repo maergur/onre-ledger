@@ -277,6 +277,14 @@ footer{margin:56px 0 40px; padding-top:22px; border-top:1px solid var(--line);
 footer p{margin:0 0 7px; max-width:74ch}
 footer a{color:var(--accent)}
 
+@media (max-width:640px){
+  .topbar{gap:8px 10px}
+  .brand{flex-basis:100%}
+  .asof{margin-right:auto; font-size:10.5px}
+  .asof .tz,.asof .upd{display:none}
+  .byline{display:none}
+}
+@media (max-width:359px){ .stats.stats{grid-template-columns:minmax(0,1fr)} }
 @media (max-width:760px){
   .stats{grid-template-columns:repeat(2,1fr)}
   .tl-item,.tl-now{grid-template-columns:26px 1fr; gap:10px}
@@ -288,7 +296,7 @@ footer a{color:var(--accent)}
 /* ---------- single-page layout ----------
    12-column board; panels that share a row stretch to the same height. */
 .board{display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); gap:20px; margin-top:20px; align-items:stretch}
-.a-look{grid-column:1/-1} .a-chart{grid-column:span 7} .a-src{grid-column:span 5}
+.a-look{grid-column:1/-1} .a-ref{grid-column:1/-1} .a-chart{grid-column:span 7} .a-src{grid-column:span 5}
 .a-top{grid-column:span 7} .a-conc{grid-column:span 5}
 @media (max-width:980px){ .board>*{grid-column:1/-1} }
 .panel{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:18px 20px;
@@ -377,7 +385,7 @@ tr:not(.proto) .meter i{opacity:.55}
   color:var(--accent); font-size:9.5px; letter-spacing:.08em}
 @media (max-width:640px){ .notif{position:fixed; top:58px; left:16px; right:16px; width:auto} }
 .newsbar{border-bottom:1px solid var(--line); background:var(--surface)}
-.newsin{display:flex; align-items:center; gap:12px; padding-block:10px; min-width:0}
+.newsin{display:flex; align-items:center; gap:12px; padding-block:9px; min-width:0}
 .nstripe{width:4px; align-self:stretch; border-radius:2px; background:var(--accent); flex:none}
 .newsbar.bad .nstripe{background:var(--bad)} .newsbar.warn .nstripe{background:var(--warn)}
 .ntag{font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--accent);
@@ -385,8 +393,15 @@ tr:not(.proto) .meter i{opacity:.55}
 .ntext{flex:1; min-width:0; font-size:13.5px; color:var(--ink-2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
 .ntext b{color:var(--ink); font-weight:600; margin-right:8px}
 .xclear.nclose{position:static; flex:none}
-#nread{flex:none; white-space:nowrap}
-@media (max-width:640px){ .ntext{white-space:normal} .ntext span{display:none} }
+#nread{flex:none; white-space:nowrap; height:30px; padding:0 12px; border:1px solid var(--line-2); border-radius:7px;
+  background:var(--surface-2); color:var(--accent); font-size:12.5px; text-decoration:none}
+#nread:hover{border-color:var(--accent)}
+.xclear.nclose{width:30px; height:30px}
+@media (max-width:640px){
+  .ntag{display:none}
+  .ntext{white-space:normal; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; font-size:13px}
+  .ntext span{display:none}
+}
 
 [hidden]{display:none !important}
 .iconbtn{width:34px; height:32px; padding:0; display:inline-grid; place-items:center}
@@ -398,11 +413,17 @@ tr:not(.proto) .meter i{opacity:.55}
 .byline:hover{color:var(--accent-ink); text-decoration:underline}
 .byline:focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:3px}
 .foot a{color:var(--accent)}
-.refcard{margin-top:20px; flex-direction:row}
-.refbody p{margin:8px 0 0; font-size:14px; color:var(--ink-2); display:flex; flex-wrap:wrap; align-items:center; gap:8px}
-.refbody p.hint{display:block; font-size:12.5px; color:var(--muted); max-width:72ch}
-.reflink{display:inline-flex; align-items:center; height:auto; padding:7px 14px; font-size:13px; text-decoration:none}
-.refcode{font-family:"IBM Plex Mono",monospace; font-weight:500; font-size:15px; color:var(--ink); background:var(--surface-2);
+.refcard{padding-block:14px; border-color:color-mix(in srgb,var(--accent) 40%,var(--line));
+  background:linear-gradient(90deg,var(--accent-soft),var(--surface) 55%)}
+.refrow{display:flex; align-items:center; justify-content:space-between; gap:12px 20px; flex-wrap:wrap}
+.reftext{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; font-size:14px; color:var(--ink-2)}
+.reftext b{font-family:Archivo,sans-serif; font-size:15.5px; font-weight:600; color:var(--ink)}
+.refactions{display:flex; align-items:center; gap:8px; flex-wrap:wrap}
+.refactions .copy{height:34px; padding-inline:12px}
+.reflink{display:inline-flex; align-items:center; gap:6px; height:34px; padding:0 14px; font-size:13.5px; text-decoration:none}
+.refnote{margin:8px 0 0; font-size:12px; color:var(--muted); max-width:90ch}
+.refcode{display:inline-flex; align-items:center; height:34px; box-sizing:border-box;
+  font-family:"IBM Plex Mono",monospace; font-weight:500; font-size:15px; letter-spacing:.06em; color:var(--ink); background:var(--surface-2);
   border:1px dashed var(--line-2); border-radius:6px; padding:3px 10px; user-select:all}
 
 /* ---------- dialogs ---------- */
@@ -511,6 +532,18 @@ tr.hit td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
       <p class="err" id="err" hidden></p>
     </div>
 
+    <div class="panel refcard a-ref" id="refcard" hidden>
+      <div class="refrow">
+        <div class="reftext"><b>New to OnRe?</b><span>Join with the builder’s referral code.</span></div>
+        <div class="refactions">
+          <span class="refcode" id="refcode"></span>
+          <button class="copy" type="button" id="refcopy">Copy</button>
+          <a class="go reflink" id="reflink" href="#" target="_blank" rel="noopener" hidden>Sign up on OnRe <span aria-hidden="true">→</span></a>
+        </div>
+      </div>
+      <p class="refnote">The person who builds this page earns referral points from wallets that sign up with this code. The ledger works the same whether or not you use it.</p>
+    </div>
+
     <div class="panel a-chart">
       <div class="ph"><h2>Daily emission</h2><span class="eyebrow">Last 30 snapshots</span></div>
       <div id="chart"></div>
@@ -546,16 +579,6 @@ tr.hit td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
       <p class="hint push" id="conc-note"></p>
     </div>
 
-  </div>
-
-  <div class="panel refcard" id="refcard" hidden>
-    <div class="refbody">
-      <span class="eyebrow">Not on OnRe yet?</span>
-      <p>Sign up with this referral code: <span class="refcode" id="refcode"></span>
-        <button class="copy" type="button" id="refcopy">Copy</button>
-        <a class="go reflink" id="reflink" href="#" target="_blank" rel="noopener" hidden>Sign up on OnRe</a></p>
-      <p class="hint">This is the referral code of the person who builds this page. They earn referral points from wallets that sign up with it. The ledger works the same whether or not you use it.</p>
-    </div>
   </div>
 
   <div class="foot">

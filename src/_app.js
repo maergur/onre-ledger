@@ -73,7 +73,7 @@ for(var k=1;k<S.length;k++){
 var latest=daily[daily.length-1];
 
 /* ---------- header + stat strip ---------- */
-document.getElementById("asof").textContent="Updated "+D.asOf+(D.asOfTime?" "+D.asOfTime+" (UTC+3)":"");
+document.getElementById("asof").innerHTML='<span class="upd">Updated </span>'+esc(D.asOf)+(D.asOfTime?" "+esc(D.asOfTime)+'<span class="tz"> (UTC+3)</span>':"");
 var spanDays=Math.round(D.rateDays*10)/10;
 document.getElementById("stats").innerHTML=[
   ["Total points",compact(D.system),n(D.system),
