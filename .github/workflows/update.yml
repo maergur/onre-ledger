@@ -53,5 +53,5 @@ jobs:
               && git commit -q -m "$2: $stamp" && git push -q -f "$REMOTE" "$2" )
           }
           publish store data
-          mkdir -p site && cp out/standalone.html site/index.html && cp vercel.json src/og.png site/
+          mkdir -p site && cp out/standalone.html site/index.html && cp vercel.json src/og.png src/apple-touch-icon.png site/
           publish site site
