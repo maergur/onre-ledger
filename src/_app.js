@@ -8,6 +8,13 @@ function addrAt(i){return FULL.addrs.substr(i*44,44).trim();}
 function ptsAt(i){return FULL.pts[i];}
 function rtsAt(i){return FULL.rts[i];}
 function seenAt(i){return FULL.seen[i];}
+function nameAt(i){ var s=FULL.sol&&FULL.sol[i]; return s?s+".sol":""; }
+/* a wallet's label in lists: its .sol name when it has one, else the shortened address */
+function walletLabel(i,full){
+  var nm=nameAt(i), ad=addrAt(i);
+  if(nm)return '<span class="solname" title="'+ad+'">'+esc(nm)+'</span>';
+  return full?'<span class="addr-full">'+ad+'</span><span class="addr-short">'+short(ad)+'</span>':short(ad);
+}
 
 /* ---------- formatting ---------- */
 var nf=new Intl.NumberFormat("en-US");
@@ -413,7 +420,7 @@ function rowRate(rt){
   return '<td class="n" style="color:'+(rt>0?"var(--good)":"var(--faint)")+'">'+(rt>0?"+"+compact(rt):"—")+'</td>';
 }
 document.getElementById("top10").innerHTML=Array.apply(null,Array(Math.min(10,N))).map(function(_,i){
-  return '<tr class="clickable" tabindex="0" data-i="'+i+'"><td class="rk">#'+(i+1)+'</td><td class="a l">'+short(addrAt(i))+
+  return '<tr class="clickable" tabindex="0" data-i="'+i+'"><td class="rk">#'+(i+1)+'</td><td class="a l">'+walletLabel(i,false)+
     '</td><td class="n">'+compact(ptsAt(i))+'</td>'+rowRate(rtsAt(i))+'</tr>';
 }).join("");
 document.getElementById("allbtn").textContent="See all "+n(N)+" wallets";
@@ -487,6 +494,7 @@ function openWallet(idx,solName){
   openDlg("dlg-wallet","w-"+addr);
   var sp=document.getElementById("w-sol");
   function setSol(nm){ if(nm&&document.getElementById("w-addr")&&document.getElementById("w-addr").textContent===addr){ sp.textContent=nm; sp.hidden=false; } }
+  solName=solName||nameAt(idx);
   if(solName)setSol(solName); else primarySol(addr).then(setSol);
 }
 
@@ -534,7 +542,7 @@ function renderLB(){
   var start=page*PAGE, end=Math.min(tot,start+PAGE), out=[];
   for(var i=start;i<end;i++){
     var ix=idxAt(i);
-    out.push('<tr class="clickable'+(ix===hit?' hit':'')+'" tabindex="0" data-i="'+ix+'"><td class="rk">#'+n(ix+1)+'</td><td class="a l"><span class="addr-full">'+addrAt(ix)+'</span><span class="addr-short">'+short(addrAt(ix))+'</span>'+
+    out.push('<tr class="clickable'+(ix===hit?' hit':'')+'" tabindex="0" data-i="'+ix+'"><td class="rk">#'+n(ix+1)+'</td><td class="a l">'+walletLabel(ix,true)+
       '</td><td class="n">'+n(ptsAt(ix))+'</td><td class="n">'+pct(ptsAt(ix)/D.system,4)+'</td>'+rowRate(rtsAt(ix))+'</tr>');
   }
   document.getElementById("lbbody").innerHTML=out.join("")||
@@ -568,7 +576,7 @@ function runSearch(){
   }
   filtered=[];
   for(var i=0;i<N&&filtered.length<5000;i++){
-    if(addrAt(i).toLowerCase().indexOf(q)!==-1)filtered.push(i);
+    if(addrAt(i).toLowerCase().indexOf(q)!==-1||(nameAt(i)&&nameAt(i).indexOf(q)!==-1))filtered.push(i);
   }
   if(filtered.length===1)hit=filtered[0];
   page=0;

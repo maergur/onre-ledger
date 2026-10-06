@@ -40,8 +40,11 @@ jobs:
       - name: Fetch snapshot
         run: python3 scripts/fetch.py --store store
 
+      - name: Refresh .sol names (paced, best effort)
+        run: python3 scripts/names.py --store store || true
+
       - name: Build page
-        run: python3 scripts/build.py --data store --series store/series.json --src src --out out
+        run: python3 scripts/build.py --data store --series store/series.json --names store/names.json --src src --out out
 
       - name: Publish data and site branches
         run: |

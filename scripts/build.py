@@ -37,6 +37,7 @@ def arg(name, default=None):
 span_arg = int(arg("--span")) if arg("--span") else None
 ROOT = os.path.abspath(os.path.expanduser(arg("--data", os.path.join(HERE, ".."))))
 SERIES = arg("--series")
+NAMES = arg("--names")
 SRC = os.path.abspath(arg("--src", HERE))
 OUT = os.path.abspath(arg("--out", SRC))
 
@@ -288,6 +289,16 @@ def main():
     }
 
     full = {"addrs": addrs, "pts": pts, "rts": rts, "seen": seen}
+    # primary .sol names (public SNS data) for the wallets that set one: {rank index: name}
+    if NAMES and os.path.exists(NAMES):
+        nm = load(NAMES)
+        sol = {}
+        for i, r in enumerate(rows):
+            v = nm.get(r["address"])
+            if v and v[0] and re.fullmatch(r"[a-z0-9_.-]{1,64}", v[0]):
+                sol[str(i)] = v[0]
+        if sol:
+            full["sol"] = sol
     src, bd, br = sources(rows, span)
     if src:
         meta["sources"] = src
