@@ -44,7 +44,7 @@ jobs:
         run: python3 scripts/names.py --store store || true
 
       - name: Build page
-        run: python3 scripts/build.py --data store --series store/series.json --names store/names.json --src src --out out
+        run: python3 scripts/build.py --data store --series store/series.json --names store/names.json --vercel vercel.json --src src --out out
 
       - name: Publish data and site branches
         run: |
@@ -56,5 +56,5 @@ jobs:
               && git commit -q -m "$2: $stamp" && git push -q -f "$REMOTE" "$2" )
           }
           publish store data
-          mkdir -p site && cp out/standalone.html site/index.html && cp vercel.json src/og.png src/apple-touch-icon.png site/
+          mkdir -p site && cp out/standalone.html site/index.html && cp out/vercel.json src/og.png src/apple-touch-icon.png site/
           publish site site

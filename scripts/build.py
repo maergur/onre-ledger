@@ -231,7 +231,14 @@ def main():
         hours = max(1, (newest_d - base_d).days) * 24.0
     days = max(hours / 24.0, 1e-6)
     prev = {r["address"]: r["points"] for r in old["rows"]}
-    rows = sorted(cur["rows"], key=lambda r: -r["points"])
+    # Only well-formed Solana addresses and integer balances reach the page: the API is
+    # third-party data and addresses end up in HTML, so anything else is dropped here.
+    B58 = re.compile(r"[1-9A-HJ-NP-Za-km-z]{32,44}")
+    clean = [r for r in cur["rows"] if isinstance(r.get("address"), str) and B58.fullmatch(r["address"])
+             and isinstance(r.get("points"), int)]
+    if len(clean) != len(cur["rows"]):
+        print("  dropped %d malformed rows" % (len(cur["rows"]) - len(clean)))
+    rows = sorted(clean, key=lambda r: -r["points"])
 
     addrs, pts, rts, seen = [], [], [], []
     for r in rows:
@@ -331,6 +338,30 @@ def main():
             + "</script>\n<script>\n" + app + "</script>\n")
     with open(os.path.join(OUT, "index.html"), "w") as f:
         f.write(page)
+    # Hosting config with a Content-Security-Policy pinned to this build's one inline script.
+    vin = arg("--vercel")
+    if vin:
+        import hashlib, base64
+        digest = base64.b64encode(hashlib.sha256(("\n" + app).encode()).digest()).decode()
+        csp = "; ".join([
+            "default-src 'none'",
+            "script-src 'sha256-%s'" % digest,
+            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+            "font-src https://fonts.gstatic.com",
+            "img-src 'self' data:",
+            "connect-src https://sdk-proxy.sns.id",
+            "base-uri 'none'", "form-action 'none'", "frame-ancestors 'none'",
+        ])
+        vc = json.load(open(vin))
+        hdrs = vc["headers"][0]["headers"]
+        hdrs[:] = [h for h in hdrs if h["key"] not in ("Content-Security-Policy", "X-Frame-Options", "Permissions-Policy",
+                                                     "Strict-Transport-Security")]
+        hdrs += [{"key": "Content-Security-Policy", "value": csp},
+                 {"key": "X-Frame-Options", "value": "DENY"},
+                 {"key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=(), payment=()"},
+                 {"key": "Strict-Transport-Security", "value": "max-age=63072000; includeSubDomains"}]
+        with open(os.path.join(OUT, "vercel.json"), "w") as f:
+            json.dump(vc, f, indent=2)
     # Standalone copy: split the template at </style> into head and body.
     cut = page.index("</style>") + len("</style>")
     standalone = ('<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n'
