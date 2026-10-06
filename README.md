@@ -1,4 +1,6 @@
-# OnRe Points Ledger
+# Pointsbook
+
+https://pointsbook.io - the unofficial OnRe points ledger.
 
 A community-built ledger of every wallet in OnRe's public points programme: standings,
 where points come from (by protocol and product), who holds them, daily emission, and

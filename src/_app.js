@@ -359,7 +359,7 @@ function walletSources(idx){
   var top100=(tiers[0]?tiers[0].pts:0)+(tiers[1]?tiers[1].pts:0);
   document.getElementById("conc-chart").innerHTML='<svg viewBox="0 0 180 180" role="img" aria-label="Share of all points by wallet rank tier">'+
     '<circle cx="90" cy="90" r="'+R+'" fill="none" stroke="var(--surface-2)" stroke-width="26"/>'+arcs.join("")+
-    '<text x="90" y="86" text-anchor="middle" fill="var(--ink)" font-family="Archivo, sans-serif" font-weight="600" font-size="24">'+pct(top100/sum,1)+'</text>'+
+    '<text x="90" y="86" text-anchor="middle" fill="var(--ink)" font-family="Plus Jakarta Sans, Inter, sans-serif" font-weight="600" font-size="24">'+pct(top100/sum,1)+'</text>'+
     '<text x="90" y="106" text-anchor="middle" fill="var(--muted)" font-family="IBM Plex Mono, monospace" font-size="9.5" letter-spacing=".5">HELD BY TOP 100</text></svg>';
   document.getElementById("conc-legend").innerHTML=tiers.map(function(t){
     return '<div class="crow"><span class="sw" style="background:'+t.col+'"></span><span class="cl">'+t.label+

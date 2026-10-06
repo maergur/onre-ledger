@@ -1,34 +1,51 @@
-<title>OnRe Points Ledger</title>
+<title>Pointsbook</title>
+<meta name="description" content="Unofficial OnRe points ledger: every wallet's rank and daily rate, where points come from by protocol and product, who holds them, and what changed. Updated hourly.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Pointsbook">
+<meta property="og:title" content="Pointsbook — the unofficial OnRe points ledger">
+<meta property="og:description" content="Look up any wallet, see where points come from and who holds them. Every OnRe wallet, updated hourly.">
+<meta property="og:url" content="https://pointsbook.io/">
+<meta property="og:image" content="https://pointsbook.io/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:creator" content="@maeonchain">
+<meta name="twitter:title" content="Pointsbook — the unofficial OnRe points ledger">
+<meta name="twitter:description" content="Look up any wallet, see where points come from and who holds them. Updated hourly.">
+<meta name="twitter:image" content="https://pointsbook.io/og.png">
+<meta name="theme-color" content="#1A1A17">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
 :root{
-  --ground:#F4F7F6; --surface:#FFFFFF; --surface-2:#EDF2F1;
-  --ink:#0F1C1E; --ink-2:#31474A; --muted:#5F7375; --faint:#8DA2A3;
-  --line:#DBE5E4; --line-2:#C6D5D3;
-  --accent:#956508; --accent-ink:#6E4A05; --accent-soft:#F4E8CC; --on-accent:#FFFFFF;
-  --good:#2E8540; --good-soft:#D9EEDC;
+  /* Palette after OnRe's own: warm charcoal, off-white, one signal yellow. Light values here. */
+  --ground:#F8F8F6; --surface:#FFFFFF; --surface-2:#F1F0EB;
+  --ink:#252521; --ink-2:#45453F; --muted:#6E6E66; --faint:#9A9A90;
+  --line:#E6E5DF; --line-2:#D5D4CC;
+  --accent:#252521; --accent-ink:#000000; --accent-soft:#FFF3C4; --on-accent:#FFFFFF;
+  --signal:#FFC40D;
+  --good:#2E7D32; --good-soft:#DCEFD9;
   --warn:#B4561C; --warn-soft:#F8E1D2;
-  --bad:#A32F47; --bad-soft:#F6DCE1;
-  --shadow:0 1px 2px rgba(15,28,30,.06),0 6px 18px -10px rgba(15,28,30,.22);
-  --c1:#0B7C7B; --c2:#4F5BD5; --c3:#B67A12; --c4:#C2456B; --c5:#3E8E41; --c6:#8A5CB8; --c0:#A9B8B7;
-  --bar:#0B7C7B; --hold:#0B7C7B;
+  --bad:#B3261E; --bad-soft:#F7DCDA;
+  --shadow:0 1px 2px rgba(37,37,33,.06),0 6px 18px -10px rgba(37,37,33,.22);
+  --c1:#E0A800; --c2:#4A7FB5; --c3:#C8633F; --c4:#8A6CB8; --c5:#5E9A4B; --c6:#A89F86; --c0:#C4C3BA;
+  --bar:#8C8C82; --hold:#E0A800;
   --r:10px;
   padding-top:env(safe-area-inset-top,0px);
   padding-bottom:env(safe-area-inset-bottom,0px);
 }
 /* Dark is the default for every viewer; light applies only when chosen with the theme button. */
 :root:not([data-theme="light"]){
-  --ground:#0C1115; --surface:#131A20; --surface-2:#1A232B;
-  --ink:#E8EFEE; --ink-2:#C2D2D1; --muted:#90A4A4; --faint:#6B8183;
-  --line:#25313A; --line-2:#33424D;
-  --accent:#E6B74A; --accent-ink:#F3D27F; --accent-soft:#2E2510; --on-accent:#1B1405;
-  --good:#7FD98A; --good-soft:#14301B;
-  --warn:#F0884E; --warn-soft:#3A1F12;
-  --bad:#F0708A; --bad-soft:#39161F;
-  --c1:#3FBFB8; --c2:#8C95F0; --c3:#E6B74A; --c4:#EE7D9C; --c5:#6CC570; --c6:#B992E3; --c0:#4A5A66;
-  --bar:#3FBFB8; --hold:#3FBFB8;
+  --ground:#1A1A17; --surface:#22221F; --surface-2:#2A2A26;
+  --ink:#F8F8F6; --ink-2:#D6D6CF; --muted:#A3A398; --faint:#76766C;
+  --line:#33332E; --line-2:#43433C;
+  --accent:#FFC40D; --accent-ink:#FFD54D; --accent-soft:#3A2F0A; --on-accent:#252521;
+  --good:#9BD67A; --good-soft:#1F2E16;
+  --warn:#F2994A; --warn-soft:#3A2512;
+  --bad:#F07070; --bad-soft:#3A1818;
+  --c1:#FFC40D; --c2:#8FB8DE; --c3:#E58C6A; --c4:#B9A3D6; --c5:#9CC48A; --c6:#E8E3D3; --c0:#55554D;
+  --bar:#C9C9BE; --hold:#FFC40D;
   --shadow:0 1px 2px rgba(0,0,0,.4),0 6px 20px -12px rgba(0,0,0,.7);
   color-scheme:dark;
 }
@@ -37,11 +54,11 @@
 html{-webkit-text-size-adjust:100%}
 body{
   margin:0; background:var(--ground); color:var(--ink);
-  font-family:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;
   font-size:15px; line-height:1.55; -webkit-font-smoothing:antialiased;
 }
 .wrap{max-width:1320px; margin:0 auto; padding-inline:clamp(16px,3vw,32px)}
-h1,h2,h3{font-family:Archivo,"IBM Plex Sans",system-ui,sans-serif; text-wrap:balance; margin:0}
+h1,h2,h3{font-family:"Plus Jakarta Sans",Inter,system-ui,sans-serif; text-wrap:balance; margin:0}
 .mono{font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace; font-variant-numeric:tabular-nums}
 .num{font-family:"IBM Plex Mono",ui-monospace,monospace; font-variant-numeric:tabular-nums; letter-spacing:-.01em}
 .eyebrow{font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.11em;
@@ -55,7 +72,7 @@ header.top{
 }
 .topbar{display:flex; align-items:center; gap:14px; padding-block:11px; flex-wrap:wrap}
 .brand{display:flex; align-items:baseline; gap:9px; margin-right:auto; min-width:0}
-.brand b{font-family:Archivo,sans-serif; font-weight:700; font-size:17px; letter-spacing:-.02em}
+.brand b{font-family:"Plus Jakarta Sans",Inter,sans-serif; font-weight:700; font-size:17px; letter-spacing:-.02em}
 .brand .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);flex:none;align-self:center}
 .asof{font-family:"IBM Plex Mono",monospace; font-size:11.5px; color:var(--muted); white-space:nowrap}
 .tbtn{
@@ -71,7 +88,7 @@ header.top{
 .stat{background:var(--surface); padding:13px 15px; min-width:0}
 .stat .k{font-family:"IBM Plex Mono",monospace; font-size:10.5px; letter-spacing:.1em;
   text-transform:uppercase; color:var(--muted); display:block; margin-bottom:5px}
-.stat .v{font-family:Archivo,sans-serif; font-weight:600; font-size:20px; letter-spacing:-.025em;
+.stat .v{font-family:"Plus Jakarta Sans",Inter,sans-serif; font-weight:600; font-size:20px; letter-spacing:-.025em;
   font-variant-numeric:tabular-nums; display:block; line-height:1.15; overflow-wrap:anywhere}
 .stat .s{font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--muted); display:block; margin-top:3px}
 .s.up{color:var(--good)} .s.dn{color:var(--bad)}
@@ -138,7 +155,7 @@ section{margin-top:40px}
 .calc-out{padding:18px 20px; background:var(--surface-2); border-bottom:1px solid var(--line)}
 .calc-out .k{font-family:"IBM Plex Mono",monospace; font-size:10.5px; letter-spacing:.1em;
   text-transform:uppercase; color:var(--muted); display:block; margin-bottom:6px}
-.calc-out .v{font-family:Archivo,sans-serif; font-weight:700; font-size:34px; letter-spacing:-.03em;
+.calc-out .v{font-family:"Plus Jakarta Sans",Inter,sans-serif; font-weight:700; font-size:34px; letter-spacing:-.03em;
   font-variant-numeric:tabular-nums; line-height:1.05; display:block; color:var(--ink);
   overflow-wrap:anywhere}
 .calc-out .split{font-family:"IBM Plex Mono",monospace; font-size:12px; color:var(--ink-2);
@@ -222,7 +239,7 @@ td.a{font-family:"IBM Plex Mono",monospace; font-size:12.5px}
 .tl-when{display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; margin-bottom:3px}
 .tl-date{font-family:"IBM Plex Mono",monospace; font-size:11.5px; color:var(--ink-2); font-weight:500}
 .tl-rel{font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--faint)}
-.tl-title{font-family:Archivo,sans-serif; font-size:15.5px; font-weight:600; letter-spacing:-.012em;
+.tl-title{font-family:"Plus Jakarta Sans",Inter,sans-serif; font-size:15.5px; font-weight:600; letter-spacing:-.012em;
   margin:0 0 5px; color:var(--ink)}
 .tl-sum{margin:0; font-size:13.5px; color:var(--ink-2); max-width:68ch}
 .tl-item.ahead .tl-title,.tl-item.ahead .tl-sum{color:var(--muted)}
@@ -382,7 +399,7 @@ tr:not(.proto) .meter i{opacity:.55}
   max-height:min(70vh,560px); overflow:auto; background:var(--ground); border:1px solid var(--line-2); border-radius:12px;
   padding:14px; box-shadow:0 24px 60px -20px rgba(0,0,0,.55)}
 .notif-head{display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin:2px 2px 12px}
-.notif-head b{font-family:Archivo,sans-serif; font-size:15px; font-weight:600}
+.notif-head b{font-family:"Plus Jakarta Sans",Inter,sans-serif; font-size:15px; font-weight:600}
 .ev.unread .tl-date::after{content:"NEW"; margin-left:8px; padding:1px 6px; border-radius:4px; background:var(--accent-soft);
   color:var(--accent); font-size:9.5px; letter-spacing:.08em}
 @media (max-width:640px){ .notif{position:fixed; top:58px; left:16px; right:16px; width:auto} }
@@ -406,6 +423,13 @@ tr:not(.proto) .meter i{opacity:.55}
 }
 
 [hidden]{display:none !important}
+.brand .dot{background:var(--signal)}
+.brand .sub{font-size:13px; color:var(--muted); white-space:nowrap}
+@media (max-width:640px){ .brand .sub{display:none} }
+.unoff{font-family:"IBM Plex Mono",monospace; font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted);
+  border:1px solid var(--line-2); border-radius:4px; padding:1px 6px; align-self:center; white-space:nowrap}
+:root[data-theme="light"] .linkbtn,:root[data-theme="light"] .byline,:root[data-theme="light"] .foot a{
+  text-decoration:underline; text-decoration-color:var(--signal); text-decoration-thickness:2px; text-underline-offset:3px}
 .iconbtn{width:34px; height:32px; padding:0; display:inline-grid; place-items:center}
 .iconbtn svg{width:17px; height:17px}
 :root:not([data-theme="light"]) .i-moon{display:none}
@@ -419,7 +443,7 @@ tr:not(.proto) .meter i{opacity:.55}
   background:linear-gradient(90deg,var(--accent-soft),var(--surface) 55%)}
 .refrow{display:flex; align-items:center; justify-content:space-between; gap:12px 20px; flex-wrap:wrap}
 .reftext{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; font-size:14px; color:var(--ink-2)}
-.reftext b{font-family:Archivo,sans-serif; font-size:15.5px; font-weight:600; color:var(--ink)}
+.reftext b{font-family:"Plus Jakarta Sans",Inter,sans-serif; font-size:15.5px; font-weight:600; color:var(--ink)}
 .refactions{display:flex; align-items:center; gap:8px; flex-wrap:wrap}
 .refactions .copy{height:34px; padding-inline:12px}
 .reflink{display:inline-flex; align-items:center; gap:6px; height:34px; padding:0 14px; font-size:13.5px; text-decoration:none}
@@ -488,7 +512,7 @@ tr.hit td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
 </style>
 <header class="top">
   <div class="wrap topbar">
-    <span class="brand"><span class="dot"></span><b>OnRe Points Ledger</b></span>
+    <span class="brand"><span class="dot"></span><b>Pointsbook</b><span class="sub">OnRe points ledger</span><span class="unoff" title="Community-built. Not affiliated with OnRe.">Unofficial</span></span>
     <span class="asof" id="asof"></span>
     <a class="byline" id="byline" href="#" target="_blank" rel="noopener" hidden></a>
     <span class="bellwrap" id="events-sec">
