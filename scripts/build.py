@@ -345,11 +345,11 @@ def main():
         digest = base64.b64encode(hashlib.sha256(("\n" + app).encode()).digest()).decode()
         csp = "; ".join([
             "default-src 'none'",
-            "script-src 'sha256-%s'" % digest,
+            "script-src 'self' 'sha256-%s'" % digest,
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
             "font-src https://fonts.gstatic.com",
             "img-src 'self' data:",
-            "connect-src https://sdk-proxy.sns.id",
+            "connect-src 'self' https://sdk-proxy.sns.id",
             "base-uri 'none'", "form-action 'none'", "frame-ancestors 'none'",
         ])
         vc = json.load(open(vin))
@@ -364,9 +364,11 @@ def main():
             json.dump(vc, f, indent=2)
     # Standalone copy: split the template at </style> into head and body.
     cut = page.index("</style>") + len("</style>")
+    # Vercel Web Analytics (cookieless page views) - only on the self-hosted build, which also gets the CSP for it
+    analytics = '<script defer src="/_vercel/insights/script.js"></script>\n' if arg("--vercel") else ""
     standalone = ('<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n'
                   '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n'
-                  + page[:cut] + "\n</head>\n<body>\n" + page[cut:] + "</body>\n</html>\n")
+                  + analytics + page[:cut] + "\n</head>\n<body>\n" + page[cut:] + "</body>\n</html>\n")
     with open(os.path.join(OUT, "standalone.html"), "w") as f:
         f.write(standalone)
 
