@@ -450,6 +450,8 @@ tr:not(.proto) .meter i{opacity:.55}
 .byline:hover{color:var(--accent-ink); text-decoration:underline}
 .byline:focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:3px}
 .foot a{color:var(--accent)}
+@media (min-width:641px){ .foot .footby{display:none} }
+.estbtn{margin-top:16px; height:42px; padding:0 18px; font-size:14px}
 .refcard{padding-block:14px; border-color:color-mix(in srgb,var(--accent) 40%,var(--line));
   background:linear-gradient(90deg,var(--accent-soft),var(--surface) 55%)}
 .refrow{display:flex; align-items:center; justify-content:space-between; gap:12px 20px; flex-wrap:wrap}
@@ -606,7 +608,7 @@ tr.hit td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
     <span class="refcode" id="refcode"></span>
     <button class="copy" type="button" id="refcopy">Copy</button>
     <a class="go reflink" id="reflink" href="#" target="_blank" rel="noopener" hidden>Sign up <span aria-hidden="true">→</span></a>
-    <span class="refnote">I earn referral points from it.</span>
+    <span class="refnote">It sends a little love my way and keeps Pointsbook free. Thank you 💛</span>
   </div>
 
   <div class="stats" id="stats"></div>
@@ -619,11 +621,11 @@ tr.hit td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
   <div class="tabpanel" id="tab-ledger" role="tabpanel" aria-labelledby="tab-btn-ledger">
   <div class="board">
     <div class="panel a-src" id="src-sec">
-      <div class="ph"><h2>Where the points come from</h2><span class="eyebrow" id="srcasof"></span></div>
+      <div class="ph"><h2>Where the points come from</h2></div>
       <div class="srcbar srcbar-lg" id="srcbar" role="img"></div>
       <div class="srcgrid">
         <div class="srccol">
-          <div class="srch"><h3>By protocol</h3><span class="eyebrow">Share of all points</span></div>
+          <div class="srch"><h3>By protocol</h3></div>
           <div class="srclegend" id="srclegend"></div>
         </div>
         <div class="srccol">
@@ -635,7 +637,7 @@ tr.hit td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
     </div>
 
     <div class="panel lookup a-look">
-      <div class="ph"><h2>Find a wallet</h2><span class="eyebrow" id="lookcount"></span></div>
+      <div class="ph"><h2>Find a wallet</h2></div>
       <form id="lform" autocomplete="off">
         <input id="waddr" name="waddr" type="text" spellcheck="false"
                placeholder="Paste a wallet address or .sol name" aria-label="Solana wallet address or .sol name">
@@ -655,7 +657,7 @@ tr.hit td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
     </div>
 
     <div class="panel a-conc">
-      <div class="ph"><h2>Who holds the points</h2><span class="eyebrow">By rank</span></div>
+      <div class="ph"><h2>Who holds the points</h2></div>
       <div class="conc">
         <div class="conc-chart" id="conc-chart"></div>
         <div class="conc-legend" id="conc-legend"></div>
@@ -678,7 +680,7 @@ tr.hit td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
   <div class="tabpanel" id="tab-airdrop" role="tabpanel" aria-labelledby="tab-btn-airdrop" hidden>
   <div class="board">
     <div class="panel a-air" id="air-sec">
-      <div class="ph"><h2>Speculate on your airdrop</h2><span class="eyebrow">Hypothetical · not financial advice</span></div>
+      <div class="ph"><h2>Speculate on your airdrop</h2></div>
       <div class="airgrid">
         <div class="airin">
           <label class="airlbl" for="air-who">Wallet, .sol name or number of points</label>
@@ -711,8 +713,7 @@ tr.hit td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
 
   <div class="foot">
     <span>Community-built from public API data. Not affiliated with OnRe. Not financial advice.</span>
-    <span id="footby" hidden>Built by <a id="footx" href="#" target="_blank" rel="noopener"></a></span>
-    <button class="linkbtn" id="aboutbtn2" type="button">How this works</button>
+    <span id="footby" class="footby" hidden>Built by <a id="footx" href="#" target="_blank" rel="noopener"></a></span>
   </div>
 </main>
 
@@ -760,18 +761,14 @@ tr.hit td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
 </dialog>
 
 <dialog tabindex="-1" class="pop" id="dlg-about" aria-labelledby="da-title">
-  <div class="pop-head"><h2 id="da-title">How this works</h2><button class="xbtn" type="button" data-close aria-label="Close">&times;</button></div>
+  <div class="pop-head"><h2 id="da-title">About</h2><button class="xbtn" type="button" data-close aria-label="Close">&times;</button></div>
   <div class="pop-body about">
-    <p><strong>Snapshots, not live data.</strong> OnRe's rewards API rejects requests from browsers, so this page
-    cannot query it live. Every wallet is captured server-side once a day and the whole ledger is built into
-    this one page. It does not update on its own; check the date in the header.</p>
-    <p><strong>Where the rates come from.</strong> Each wallet's daily credit is measured by differencing two full
-    snapshots of every wallet, normalised by the real time between them. Points post in batches, so a wallet whose
-    batch landed outside the window can read as zero for a while.</p>
-    <p><strong>Projections are arithmetic.</strong> They carry today's measured rates forward unchanged. Reward
-    programmes change without notice, so treat every projection as "if today holds", not as a forecast.</p>
-    <p><strong>.sol names.</strong> When you search for a .sol name, or open a wallet, your browser asks the public
-    Solana Name Service (sns.id) which wallet owns the name, or which name the wallet uses. Nothing else is sent anywhere.</p>
-    <p><strong>Not affiliated with OnRe.</strong> Community-built from public API data. Nothing here is financial advice.</p>
+    <p><strong>What this is.</strong> A ledger of every wallet in OnRe’s points programme: where the points come from,
+    who holds them, and what each wallet earns per day. Built from OnRe’s public data and refreshed every hour.</p>
+    <p><strong>How rates are measured.</strong> Each wallet’s daily rate is its gain between snapshots up to four days
+    apart, divided by the real time between them. Points post in batches, so an active wallet can briefly read zero.</p>
+    <p><strong>Projections and airdrop estimates</strong> are arithmetic on today’s numbers, not forecasts. OnRe hasn’t
+    announced a token or an airdrop.</p>
+    <p><strong>.sol names</strong> are looked up with the public Solana Name Service (sns.id). Nothing else leaves your browser.</p>
   </div>
 </dialog>
