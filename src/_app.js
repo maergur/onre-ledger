@@ -433,6 +433,75 @@ function rankAt(idx,days){
   for(var j=0;j<N;j++){ if(P[j]+R[j]*days>mine)r++; }
   return r;
 }
+var CALC_DEFAULTS={fdv:300,alloc:5,tge:100,months:0};
+function calcMarkup(){
+  var s=CALC_DEFAULTS;
+  try{var v=JSON.parse(localStorage.getItem("onre-calc")||"null"); if(v)s=v;}catch(e){}
+  function ctl(id,label,min,max,step,val){
+    return '<div class="ctl"><label for="c-'+id+'">'+label+' <b id="c-'+id+'-v"></b></label>'+
+      '<input type="range" id="c-'+id+'" min="'+min+'" max="'+max+'" step="'+step+'" value="'+val+'"></div>';
+  }
+  return '<div class="calc">'+
+    '<div class="calc-out"><span class="k">Estimated airdrop value</span>'+
+      '<span class="v" id="c-out">—</span>'+
+      '<span class="split" id="c-split"></span>'+
+      '<span class="formula" id="c-formula"></span></div>'+
+    '<div class="calc-grid">'+
+      ctl("fdv","Fully diluted valuation",25,2000,25,s.fdv)+
+      ctl("alloc","Airdrop allocation",1,30,0.5,s.alloc)+
+      ctl("tge","Unlocked at launch",10,100,5,s.tge)+
+      ctl("months","Hold for",0,18,1,s.months)+
+    '</div>'+
+    '<p class="calc-assume" id="c-assume"></p>'+
+  '</div>';
+}
+function wireCalc(points,rate){
+  var ids=["fdv","alloc","tge","months"], el={};
+  ids.forEach(function(k){el[k]=document.getElementById("c-"+k);});
+  function usd(x){
+    if(x>=1e9)return "$"+(x/1e9).toFixed(2)+"B";
+    if(x>=1e6)return "$"+(x/1e6).toFixed(2)+"M";
+    if(x>=1e3)return "$"+(x/1e3).toFixed(1)+"K";
+    return "$"+x.toFixed(0);
+  }
+  function tidy(x){return x.toFixed(1).replace(/\.0$/,"");}
+  function run(){
+    var fdv=+el.fdv.value*1e6, alloc=+el.alloc.value/100, tge=+el.tge.value/100, mo=+el.months.value;
+    document.getElementById("c-fdv-v").textContent=usd(fdv);
+    document.getElementById("c-alloc-v").textContent=tidy(+el.alloc.value)+"%";
+    document.getElementById("c-tge-v").textContent=Math.round(tge*100)+"%";
+    document.getElementById("c-months-v").textContent=mo===0?"no hold":mo+(mo===1?" month":" months");
+    try{localStorage.setItem("onre-calc",JSON.stringify(
+      {fdv:+el.fdv.value,alloc:+el.alloc.value,tge:+el.tge.value,months:mo}));}catch(e){}
+
+    var days=Math.round(mo*30.44);
+    var myPts=points+rate*days, sysPts=D.system+D.totalRate*days;
+    var share=myPts/sysPts, value=fdv*alloc*share;
+
+    document.getElementById("c-out").textContent=usd(value);
+    document.getElementById("c-split").textContent = tge<1
+      ? usd(value*tge)+" liquid at launch · "+usd(value*(1-tge))+" vesting"
+      : "fully liquid at launch";
+    document.getElementById("c-formula").textContent=
+      usd(fdv)+" × "+tidy(+el.alloc.value)+"% allocation × "+(share*100).toFixed(4)+"% share";
+
+    var a=document.getElementById("c-assume");
+    if(days===0){
+      a.innerHTML="Share held flat at today’s <b>"+(share*100).toFixed(4)+"%</b>. "+
+        "Move the hold slider to carry this wallet and the whole population forward together.";
+    }else{
+      var now=points/D.system, drift=(share/now-1)*100;
+      a.innerHTML="Over "+mo+(mo===1?" month":" months")+" this wallet earns <b>"+compact(rate*days)+
+        "</b> more points while the whole population adds <b>"+compact(D.totalRate*days)+
+        "</b>, moving its share from <b>"+(now*100).toFixed(4)+"%</b> to <b>"+(share*100).toFixed(4)+
+        "%</b> ("+(drift>=0?"+":"")+drift.toFixed(1)+"%). Both sides are carried at rates measured "+
+        "over "+(D.rateDays===1?"a single day":D.rateDays+" days")+", held constant. Emission is "+
+        "assumed steady at <b>"+compact(D.totalRate)+"</b>/day, which it has not been.";
+    }
+  }
+  ids.forEach(function(k){el[k].addEventListener("input",run);});
+  run();
+}
 function openWallet(idx,solName){
   var addr=addrAt(idx), p=ptsAt(idx), rate=rtsAt(idx), rank=idx+1;
   var share=p/D.system, pctile=(1-idx/N)*100, known=seenAt(idx)===1;
@@ -469,22 +538,10 @@ function openWallet(idx,solName){
         '<thead><tr><th>Horizon</th><th>Points</th><th>Rank</th><th>Move</th></tr></thead>'+
         '<tbody>'+rows+'</tbody></table></div>'+
       caution+
-      (function(){
-        var f=+document.getElementById("air-fdv").value, al=+document.getElementById("air-alloc").value;
-        var v=f*1e6*(al/100)*share;
-        var u=v>=1e6?"$"+(v/1e6).toFixed(2).replace(/\.?0+$/,"")+"M":v>=1e4?"$"+(v/1e3).toFixed(1).replace(/\.0$/,"")+"K":"$"+n(v);
-        var fl=f>=1000?"$"+(f/1000).toString().replace(/\.0$/,"")+"B":"$"+f+"M";
-        return '<div class="westim"><div><span class="k">Estimated airdrop</span><span class="v">'+u+'</span>'+
-          '<span class="s">at '+fl+' FDV · '+al+'% airdropped · today’s share</span></div>'+
-          '<button class="linkbtn" type="button" id="w-est">Adjust →</button></div>';
-      })()+
+      calcMarkup()+
     '</div><div class="wside">'+walletSources(idx)+'</div></div>';
-  document.getElementById("w-est").onclick=function(){
-    document.getElementById("dlg-wallet").close();
-    showTab("airdrop",true);
-    var w=document.getElementById("air-who"); w.value=addr; w.dispatchEvent(new Event("input"));
-    document.getElementById("tab-airdrop").scrollIntoView({behavior:"smooth",block:"start"});
-  };
+  wireCalc(p,rate);
+
   document.getElementById("w-copy").onclick=function(){
     var b=this;
     function sel(){ var r=document.createRange(); r.selectNodeContents(document.getElementById("w-addr"));
