@@ -463,6 +463,18 @@ tr:not(.proto) .meter i{opacity:.55}
   font-family:"IBM Plex Mono",monospace; font-weight:500; font-size:15px; letter-spacing:.06em; color:var(--ink); background:var(--surface-2);
   border:1px dashed var(--line-2); border-radius:6px; padding:3px 10px; user-select:all}
 
+/* ---------- tabs ---------- */
+.tabs{display:flex; gap:4px; margin-top:20px; padding:4px; border:1px solid var(--line); border-radius:12px;
+  background:var(--surface); width:max-content; max-width:100%}
+.tab{font:inherit; font-size:14px; font-weight:500; color:var(--muted); background:none; border:0; border-radius:8px;
+  padding:9px 18px; cursor:pointer; white-space:nowrap}
+.tab:hover{color:var(--ink)}
+.tab[aria-selected="true"]{background:var(--accent); color:var(--on-accent)}
+.tab:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+@media (max-width:480px){ .tabs{width:100%} .tab{flex:1; padding:9px 8px} }
+.aircta{margin:16px 0 0; display:flex; flex-wrap:wrap; align-items:center; gap:8px 10px; font-size:13.5px; color:var(--ink-2)}
+.refcode.sm{height:28px; font-size:13px; padding:0 8px}
+
 /* ---------- airdrop estimator ---------- */
 .airgrid{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.1fr); gap:20px 36px; align-items:start}
 @media (max-width:900px){ .airgrid{grid-template-columns:minmax(0,1fr)} }
@@ -579,6 +591,12 @@ tr.hit td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
 <main class="wrap">
   <div class="stats" id="stats"></div>
 
+  <nav class="tabs" role="tablist" aria-label="Sections">
+    <button class="tab" role="tab" type="button" id="tab-btn-ledger" aria-controls="tab-ledger" aria-selected="true">Points ledger</button>
+    <button class="tab" role="tab" type="button" id="tab-btn-airdrop" aria-controls="tab-airdrop" aria-selected="false" tabindex="-1">Airdrop estimator</button>
+  </nav>
+
+  <div class="tabpanel" id="tab-ledger" role="tabpanel" aria-labelledby="tab-btn-ledger">
   <div class="board">
     <div class="panel a-src" id="src-sec">
       <div class="ph"><h2>Where the points come from</h2><span class="eyebrow" id="srcasof"></span></div>
@@ -619,35 +637,6 @@ tr.hit td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
       <p class="refnote">Full transparency: I’m the person who builds this page, and I earn referral points from wallets that join with this code. The ledger stays free and works exactly the same whether you use it or not. Thank you either way.</p>
     </div>
 
-    <div class="panel a-air" id="airdrop">
-      <div class="ph"><h2>Speculate on your airdrop</h2><span class="eyebrow">Hypothetical · not financial advice</span></div>
-      <div class="airgrid">
-        <div class="airin">
-          <label class="airlbl" for="air-who">Wallet address or number of points</label>
-          <input id="air-who" type="text" spellcheck="false" autocomplete="off" placeholder="Paste a wallet, or type points like 25M">
-          <p class="hint" id="air-whohint"></p>
-          <div class="airctls">
-            <div class="ctl"><label for="air-fdv">Fully diluted valuation <b id="air-fdv-v"></b></label>
-              <input type="range" id="air-fdv" min="25" max="3000" step="25" value="300"></div>
-            <div class="ctl"><label for="air-alloc">Share of supply airdropped <b id="air-alloc-v"></b></label>
-              <input type="range" id="air-alloc" min="1" max="30" step="0.5" value="5"></div>
-            <div class="ctl"><label for="air-mo">Keep farming for <b id="air-mo-v"></b></label>
-              <input type="range" id="air-mo" min="0" max="18" step="1" value="0"></div>
-          </div>
-        </div>
-        <div class="airout">
-          <div class="airhead">
-            <span class="k">Estimated airdrop</span>
-            <span class="v" id="air-val">—</span>
-            <span class="split" id="air-sub"></span>
-            <span class="airper" id="air-per"></span>
-          </div>
-          <div class="tscroll"><table class="airt" id="air-table"></table></div>
-        </div>
-      </div>
-      <p class="refnote" id="air-note"></p>
-    </div>
-
     <div class="panel a-chart">
       <div class="ph"><h2>Daily emission</h2><span class="eyebrow">Last 30 snapshots</span></div>
       <div id="chart"></div>
@@ -675,6 +664,43 @@ tr.hit td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
         </table>
       </div>
     </div>
+  </div>
+  </div>
+
+  <div class="tabpanel" id="tab-airdrop" role="tabpanel" aria-labelledby="tab-btn-airdrop" hidden>
+  <div class="board">
+    <div class="panel a-air" id="air-sec">
+      <div class="ph"><h2>Speculate on your airdrop</h2><span class="eyebrow">Hypothetical · not financial advice</span></div>
+      <div class="airgrid">
+        <div class="airin">
+          <label class="airlbl" for="air-who">Wallet address or number of points</label>
+          <input id="air-who" type="text" spellcheck="false" autocomplete="off" placeholder="Paste a wallet, or type points like 25M">
+          <p class="hint" id="air-whohint"></p>
+          <div class="airctls">
+            <div class="ctl"><label for="air-fdv">Fully diluted valuation <b id="air-fdv-v"></b></label>
+              <input type="range" id="air-fdv" min="25" max="3000" step="25" value="300"></div>
+            <div class="ctl"><label for="air-alloc">Share of supply airdropped <b id="air-alloc-v"></b></label>
+              <input type="range" id="air-alloc" min="1" max="30" step="0.5" value="5"></div>
+            <div class="ctl"><label for="air-mo">Keep farming for <b id="air-mo-v"></b></label>
+              <input type="range" id="air-mo" min="0" max="18" step="1" value="0"></div>
+          </div>
+        </div>
+        <div class="airout">
+          <div class="airhead">
+            <span class="k">Estimated airdrop</span>
+            <span class="v" id="air-val">—</span>
+            <span class="split" id="air-sub"></span>
+            <span class="airper" id="air-per"></span>
+          </div>
+          <div class="tscroll"><table class="airt" id="air-table"></table></div>
+        </div>
+      </div>
+      <p class="aircta" id="air-cta" hidden>Not farming OnRe yet? Join with my referral code <span class="refcode sm" id="air-code"></span>
+        <a class="linkbtn" id="air-link" href="#" target="_blank" rel="noopener">Sign up on OnRe →</a></p>
+      <p class="refnote" id="air-note"></p>
+    </div>
+
+  </div>
   </div>
 
   <div class="foot">

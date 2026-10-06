@@ -683,6 +683,27 @@ function rowOpen(e){
   run();
 })();
 
+/* ---------- tabs: ledger / airdrop estimator (deep link: #airdrop) ---------- */
+var TABS=["ledger","airdrop"];
+function showTab(name,push){
+  if(TABS.indexOf(name)<0)name="ledger";
+  TABS.forEach(function(t){
+    var on=t===name, b=document.getElementById("tab-btn-"+t);
+    b.setAttribute("aria-selected",on?"true":"false"); b.tabIndex=on?0:-1;
+    document.getElementById("tab-"+t).hidden=!on;
+  });
+  if(push)setHash(name==="ledger"?"":name);
+}
+TABS.forEach(function(t,i){
+  var b=document.getElementById("tab-btn-"+t);
+  b.addEventListener("click",function(){ showTab(t,true); });
+  b.addEventListener("keydown",function(e){
+    if(e.key!=="ArrowRight"&&e.key!=="ArrowLeft")return;
+    var nx=TABS[(i+(e.key==="ArrowRight"?1:TABS.length-1))%TABS.length];
+    showTab(nx,true); document.getElementById("tab-btn-"+nx).focus();
+  });
+});
+
 /* ---------- builder credit + referral ---------- */
 (function(){
   var site=D.site||{};
@@ -703,6 +724,10 @@ function rowOpen(e){
       try{ navigator.clipboard.writeText(ref.code).then(function(){b.textContent="Copied";},sel); }catch(e){ sel(); }
     };
     document.getElementById("refcard").hidden=false;
+    document.getElementById("air-code").textContent=ref.code;
+    if(ref.url&&/^https:\/\//.test(ref.url))document.getElementById("air-link").href=ref.url;
+    else document.getElementById("air-link").hidden=true;
+    document.getElementById("air-cta").hidden=false;
   }
 })();
 
@@ -737,5 +762,6 @@ document.getElementById("aboutbtn2").onclick=function(){openDlg("dlg-about","abo
   else if(h==="standings") openStandings();
   else if(h==="about") openDlg("dlg-about");
   else if(h==="sources"&&SRC) openDlg("dlg-sources");
+  else if(h==="airdrop") showTab("airdrop",false);
 })();
 })();
