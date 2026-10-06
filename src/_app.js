@@ -147,7 +147,7 @@ document.getElementById("stats").innerHTML=[
     var x=PL+ix*bw+gap/2, w=Math.max(1,bw-gap);
     var yy=y(d.v), top=Math.min(yy,zero), h=Math.max(1.5,Math.abs(yy-zero));
     out.push('<rect x="'+x.toFixed(1)+'" y="'+top.toFixed(1)+'" width="'+w.toFixed(1)+
-      '" height="'+h.toFixed(1)+'" fill="'+(d.v<0?"var(--bad)":"var(--accent)")+'" rx="1.5"><title>'+
+      '" height="'+h.toFixed(1)+'" fill="'+(d.v<0?"var(--bad)":"var(--bar)")+'" rx="1.5"><title>'+
       d.date+": "+compact(d.v)+"/day"+
       (d.exact?" (normalised over "+d.hrs.toFixed(1)+"h)":d.gap>1?" (averaged over "+d.gap+" days)":"")+'</title></rect>');
     if(ix%6===0||ix===data.length-1){
@@ -346,7 +346,7 @@ function walletSources(idx){
     if(c[0]>N)return;
     var hi=Math.min(c[1],N), s=0; for(var j=c[0]-1;j<hi;j++)s+=FULL.pts[j];
     sum+=s; tiers.push({label:c[2],from:c[0],to:hi,pts:s,
-      col:"color-mix(in srgb, var(--accent) "+mix[i]+"%, var(--surface-2))"});
+      col:"color-mix(in srgb, var(--hold) "+mix[i]+"%, var(--surface-2))"});
   });
   var R=70, C=2*Math.PI*R, off=0, arcs=[];
   tiers.forEach(function(t){

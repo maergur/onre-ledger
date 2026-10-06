@@ -7,26 +7,28 @@
   --ground:#F4F7F6; --surface:#FFFFFF; --surface-2:#EDF2F1;
   --ink:#0F1C1E; --ink-2:#31474A; --muted:#5F7375; --faint:#8DA2A3;
   --line:#DBE5E4; --line-2:#C6D5D3;
-  --accent:#0B7C7B; --accent-ink:#065C5B; --accent-soft:#D6EAE8;
-  --good:#1C7A4E; --good-soft:#D4EBDE;
-  --warn:#8F5F0C; --warn-soft:#F5E6C8;
+  --accent:#956508; --accent-ink:#6E4A05; --accent-soft:#F4E8CC; --on-accent:#FFFFFF;
+  --good:#2E8540; --good-soft:#D9EEDC;
+  --warn:#B4561C; --warn-soft:#F8E1D2;
   --bad:#A32F47; --bad-soft:#F6DCE1;
   --shadow:0 1px 2px rgba(15,28,30,.06),0 6px 18px -10px rgba(15,28,30,.22);
   --c1:#0B7C7B; --c2:#4F5BD5; --c3:#B67A12; --c4:#C2456B; --c5:#3E8E41; --c6:#8A5CB8; --c0:#A9B8B7;
+  --bar:#0B7C7B; --hold:#0B7C7B;
   --r:10px;
   padding-top:env(safe-area-inset-top,0px);
   padding-bottom:env(safe-area-inset-bottom,0px);
 }
 /* Dark is the default for every viewer; light applies only when chosen with the theme button. */
 :root:not([data-theme="light"]){
-  --ground:#0A1214; --surface:#111C1F; --surface-2:#172629;
+  --ground:#0C1115; --surface:#131A20; --surface-2:#1A232B;
   --ink:#E8EFEE; --ink-2:#C2D2D1; --muted:#90A4A4; --faint:#6B8183;
-  --line:#223538; --line-2:#2F474B;
-  --accent:#3FBFB8; --accent-ink:#7AD8D1; --accent-soft:#12312F;
-  --good:#4FCB8C; --good-soft:#123024;
-  --warn:#E0A94A; --warn-soft:#332611;
+  --line:#25313A; --line-2:#33424D;
+  --accent:#E6B74A; --accent-ink:#F3D27F; --accent-soft:#2E2510; --on-accent:#1B1405;
+  --good:#7FD98A; --good-soft:#14301B;
+  --warn:#F0884E; --warn-soft:#3A1F12;
   --bad:#F0708A; --bad-soft:#39161F;
-  --c1:#3FBFB8; --c2:#8C95F0; --c3:#E5AE4E; --c4:#EE7D9C; --c5:#6CC570; --c6:#B992E3; --c0:#4A6164;
+  --c1:#3FBFB8; --c2:#8C95F0; --c3:#E6B74A; --c4:#EE7D9C; --c5:#6CC570; --c6:#B992E3; --c0:#4A5A66;
+  --bar:#3FBFB8; --hold:#3FBFB8;
   --shadow:0 1px 2px rgba(0,0,0,.4),0 6px 20px -12px rgba(0,0,0,.7);
   color-scheme:dark;
 }
@@ -102,7 +104,7 @@ section{margin-top:40px}
   background:var(--ground); color:var(--ink);
 }
 .lookup input:focus{outline:2px solid var(--accent); outline-offset:1px; border-color:var(--accent)}
-.go{font:inherit; font-weight:500; font-size:14px; background:var(--accent); color:#fff; border:0;
+.go{font:inherit; font-weight:500; font-size:14px; background:var(--accent); color:var(--on-accent); border:0;
   border-radius:8px; padding:10px 20px; cursor:pointer; flex:none}
 .go:hover{background:var(--accent-ink)}
 .go:focus-visible{outline:2px solid var(--ink); outline-offset:2px}
@@ -548,7 +550,7 @@ tr.hit td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
       <div class="ph"><h2>Daily emission</h2><span class="eyebrow">Last 30 snapshots</span></div>
       <div id="chart"></div>
       <div class="legend push">
-        <span><i style="background:var(--accent)"></i>Net daily change</span>
+        <span><i style="background:var(--bar)"></i>Net daily change</span>
         <span><i style="background:var(--bad)"></i>Supply fell (clawback)</span>
       </div>
     </div>
