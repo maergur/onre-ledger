@@ -9,6 +9,12 @@ function ptsAt(i){return FULL.pts[i];}
 function rtsAt(i){return FULL.rts[i];}
 function seenAt(i){return FULL.seen[i];}
 function nameAt(i){ var s=FULL.sol&&FULL.sol[i]; return s?s+".sol":""; }
+/* referral graph (public OnRe data): who referred whom, and each referrer's code */
+var RF=FULL.rf||{}, CD=FULL.cd||{}, REFEREES={}, CODE_OWNER={};
+Object.keys(RF).forEach(function(i){ var r=RF[i][0]; if(typeof r==="number")(REFEREES[r]=REFEREES[r]||[]).push(+i); });
+Object.keys(CD).forEach(function(i){ CODE_OWNER[CD[i][0].toLowerCase()]=+i; });
+function codeAt(i){ return CD[i]?CD[i][0]:""; }
+function refCount(i){ return CD[i]?CD[i][2]:(REFEREES[i]||[]).length; }
 /* a wallet's label in lists: its .sol name when it has one, else the shortened address */
 function walletLabel(i,full){
   var nm=nameAt(i), ad=addrAt(i);
@@ -372,6 +378,25 @@ function srcTable(G,opts){
   document.getElementById("srctable").innerHTML=srcTable(G,{rate:!!SRC.rate,wallets:true});
   document.getElementById("srcbtn").onclick=function(){openDlg("dlg-sources","sources");};
 })();
+function walletRefs(idx){
+  if(!FULL.rf)return "";
+  var parts=[], cov=D.refCov||0, r=RF[idx], c=CD[idx], kids=(REFEREES[idx]||[]).slice().sort(function(x,y){return ptsAt(y)-ptsAt(x);});
+  function who(x){ return typeof x==="number"
+    ? '<button class="wlink" type="button" data-wallet="'+x+'">'+walletLabel(x,false)+'</button> <span class="rk">#'+n(x+1)+'</span>'
+    : '<span class="mono">'+short(String(x))+'</span> <span class="rk">no points</span>'; }
+  if(c)parts.push('<div class="rrow"><span class="rk2">Code</span><span><span class="refcode sm">'+esc(c[0])+'</span>'+
+    (c[1]?' <span class="pill warn">custom</span>':'')+' <span class="muted">used by '+n(c[2])+' wallet'+(c[2]===1?'':'s')+'</span></span></div>');
+  if(r)parts.push('<div class="rrow"><span class="rk2">Referred by</span><span>'+who(r[0])+(r[1]===0?' <span class="pill flat">pending</span>':'')+'</span></div>');
+  if(kids.length){
+    var act=kids.filter(function(k){return RF[k]&&RF[k][1]===1;}).length;
+    parts.push('<div class="rrow"><span class="rk2">Referred</span><span>'+n(kids.length)+' wallet'+(kids.length===1?'':'s')+' on the board · '+n(act)+' active</span></div>'+
+      '<div class="rkids">'+kids.slice(0,6).map(function(k){ return '<div>'+who(k)+'<span class="n">'+compact(ptsAt(k))+'</span></div>'; }).join("")+
+      (kids.length>6?'<div class="muted">+'+n(kids.length-6)+' more</div>':'')+'</div>');
+  }
+  var known=(r!==undefined)||(c!==undefined)||kids.length;
+  if(!parts.length)parts.push('<p class="hint">'+(known||cov>=0.999?'No referral activity for this wallet.':'Referral data is still being collected ('+Math.round(cov*100)+'% of wallets so far).')+'</p>');
+  return '<div class="srcwrap refwrap"><h3>Referrals</h3>'+parts.join("")+'</div>';
+}
 function walletSources(idx){
   if(!SRC||!FULL.bd)return "";
   var pairs=FULL.bd[idx]||[], rates=FULL.br?(FULL.br[idx]||[]):null;
@@ -539,7 +564,7 @@ function openWallet(idx,solName){
         '<tbody>'+rows+'</tbody></table></div>'+
       caution+
       calcMarkup()+
-    '</div><div class="wside">'+walletSources(idx)+'</div></div>';
+    '</div><div class="wside">'+walletSources(idx)+walletRefs(idx)+'</div></div>';
   wireCalc(p,rate);
 
   document.getElementById("w-copy").onclick=function(){
@@ -571,6 +596,7 @@ function doLookup(v){
     return true;
   }
   var idx=byAddr[v];
+  if(idx===undefined&&CODE_OWNER[v.toLowerCase()]!==undefined)idx=CODE_OWNER[v.toLowerCase()];
   if(idx===undefined){
     errEl.textContent="That address isn't in this snapshot. Check it was copied in full, or the wallet may not hold any points yet.";
     errEl.hidden=false;
@@ -600,10 +626,11 @@ function renderLB(){
   for(var i=start;i<end;i++){
     var ix=idxAt(i);
     out.push('<tr class="clickable'+(ix===hit?' hit':'')+'" tabindex="0" data-i="'+ix+'"><td class="rk">#'+n(ix+1)+'</td><td class="a l">'+walletLabel(ix,true)+
-      '</td><td class="n">'+n(ptsAt(ix))+'</td><td class="n">'+pct(ptsAt(ix)/D.system,4)+'</td>'+rowRate(rtsAt(ix))+'</tr>');
+      '</td><td class="n">'+n(ptsAt(ix))+'</td><td class="n">'+pct(ptsAt(ix)/D.system,4)+'</td>'+rowRate(rtsAt(ix))+
+      '<td class="n refs">'+(refCount(ix)?n(refCount(ix))+(CD[ix]&&CD[ix][1]?' <span class="star" title="Custom code: '+esc(codeAt(ix))+'">★</span>':''):'<span class="muted">—</span>')+'</td></tr>');
   }
   document.getElementById("lbbody").innerHTML=out.join("")||
-    '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:26px">No wallet matches that filter.</td></tr>';
+    '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:26px">No wallet matches that filter.</td></tr>';
   document.getElementById("pinfo").textContent=tot?((start+1)+"–"+end+" of "+n(tot)):"0 of 0";
   document.getElementById("pprev").disabled=page===0;
   document.getElementById("pnext").disabled=page>=pages-1;
@@ -633,7 +660,7 @@ function runSearch(){
   }
   filtered=[];
   for(var i=0;i<N&&filtered.length<5000;i++){
-    if(addrAt(i).toLowerCase().indexOf(q)!==-1||(nameAt(i)&&nameAt(i).indexOf(q)!==-1))filtered.push(i);
+    if(addrAt(i).toLowerCase().indexOf(q)!==-1||(nameAt(i)&&nameAt(i).indexOf(q)!==-1)||(codeAt(i)&&codeAt(i).toLowerCase()===q))filtered.push(i);
   }
   if(filtered.length===1)hit=filtered[0];
   page=0;
@@ -666,6 +693,9 @@ function rowOpen(e){
   if(e.type==="keydown"&&e.key!=="Enter"&&e.key!==" ")return;
   e.preventDefault(); openWallet(+tr.dataset.i);
 }
+document.getElementById("result").addEventListener("click",function(e){
+  var b=e.target.closest("[data-wallet]"); if(b){ e.preventDefault(); openWallet(+b.dataset.wallet); }
+});
 ["lbbody","top10"].forEach(function(id){
   var el=document.getElementById(id);
   el.addEventListener("click",rowOpen); el.addEventListener("keydown",rowOpen);

@@ -43,8 +43,11 @@ jobs:
       - name: Refresh .sol names (paced, best effort)
         run: python3 scripts/names.py --store store || true
 
+      - name: Refresh referral graph (paced, best effort)
+        run: python3 scripts/referrals.py --store store --budget 900 --minutes 9 || true
+
       - name: Build page
-        run: python3 scripts/build.py --data store --series store/series.json --names store/names.json --vercel vercel.json --src src --out out
+        run: python3 scripts/build.py --data store --series store/series.json --names store/names.json --referrals store/referrals.json --vercel vercel.json --src src --out out
 
       - name: Publish data and site branches
         run: |

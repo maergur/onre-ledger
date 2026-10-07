@@ -38,6 +38,7 @@ span_arg = int(arg("--span")) if arg("--span") else None
 ROOT = os.path.abspath(os.path.expanduser(arg("--data", os.path.join(HERE, ".."))))
 SERIES = arg("--series")
 NAMES = arg("--names")
+REFS = arg("--referrals")
 SRC = os.path.abspath(arg("--src", HERE))
 OUT = os.path.abspath(arg("--out", SRC))
 
@@ -306,6 +307,23 @@ def main():
                 sol[str(i)] = v[0]
         if sol:
             full["sol"] = sol
+    # public referral graph: {idx: [referrer idx or address, active 1/0/None]} and {idx: [code, custom, uses]}
+    if REFS and os.path.exists(REFS):
+        rdb = load(REFS)
+        pos = {r["address"]: i for i, r in enumerate(rows)}
+        rf, cd, covered = {}, {}, 0
+        for a, i in pos.items():
+            s = rdb.get("status", {}).get(a)
+            if s is None:
+                continue
+            covered += 1
+            if s[0]:
+                rf[str(i)] = [pos.get(s[0], s[0]), s[2]]
+        for a, c in rdb.get("codes", {}).items():
+            if c[0] and a in pos:
+                cd[str(pos[a])] = [c[0], c[1], c[2]]
+        full["rf"], full["cd"] = rf, cd
+        meta["refCov"] = round(covered / max(1, len(rows)), 4)
     src, bd, br = sources(rows, span)
     if src:
         meta["sources"] = src
@@ -317,7 +335,8 @@ def main():
     # history.json is keyed by the operator's own wallet and carries a per-line
     # `breakdown`. Only the global date/system/users fields are read above. This
     # checks STRUCTURE, not prose.
-    blob = json.dumps(meta) + json.dumps(full)
+    # free-text public fields (.sol names, referral codes) are excluded: they can't carry wallet breakdowns
+    blob = json.dumps(meta) + json.dumps({k: v for k, v in full.items() if k not in ("sol", "cd")})
     banned = ["breakdown", "referralBonus", "loopscale.", "exponent.markets",
               "permissionlessBoost", "pointsBreakdown", "tranching", "activeMultipliers"]
     leaked = [t for t in banned if t in blob]

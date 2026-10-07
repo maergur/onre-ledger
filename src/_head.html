@@ -543,6 +543,18 @@ dialog.pop::backdrop{background:rgba(8,16,18,.52); backdrop-filter:blur(2px)}
 @media (max-width:980px){ .wgrid{grid-template-columns:minmax(0,1fr)} }
 th.l,td.l{text-align:left}
 .addr-short{display:none}
+.refwrap{margin-top:22px}
+.rrow{display:grid; grid-template-columns:110px minmax(0,1fr); gap:10px; align-items:center; padding:9px 0; border-bottom:1px solid var(--line); font-size:13px}
+.rk2{font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted)}
+.rkids{display:grid; gap:2px; padding:8px 0 0 120px}
+.rkids>div{display:flex; align-items:center; gap:8px; font-size:13px}
+.rkids .n{margin-left:auto; font-family:"IBM Plex Mono",monospace; font-size:12px; color:var(--ink-2)}
+.wlink{background:none; border:0; padding:0; font:inherit; color:var(--ink); cursor:pointer; text-decoration:underline;
+  text-decoration-color:var(--line-2); text-underline-offset:3px}
+.wlink:hover{text-decoration-color:var(--accent)}
+.muted{color:var(--muted)}
+.star{color:var(--accent)}
+@media (max-width:640px){ .refs{display:none} .rkids{padding-left:0} .rrow{grid-template-columns:1fr} }
 .solname{font-family:Inter,system-ui,sans-serif; font-weight:500; color:var(--ink)}
 @media (max-width:900px){ .addr-full{display:none} .addr-short{display:inline} }
 .lbsearch{position:relative; display:flex; align-items:center; margin:0}
@@ -651,7 +663,7 @@ tr.hit td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
       <div class="ph"><h2>Find a wallet</h2></div>
       <form id="lform" autocomplete="off">
         <input id="waddr" name="waddr" type="text" spellcheck="false"
-               placeholder="Paste a wallet address or .sol name" aria-label="Solana wallet address or .sol name">
+               placeholder="Paste a wallet address, .sol name or referral code" aria-label="Solana wallet address or .sol name">
         <button class="go" type="submit">Look up</button>
       </form>
       <p class="hint" id="hint"></p>
@@ -746,7 +758,7 @@ tr.hit td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
     <p class="lbstatus" id="lbstatus" aria-live="polite"></p>
     <div class="tscroll">
       <table>
-        <thead><tr><th>Rank</th><th class="l">Wallet</th><th>Points</th><th>Share</th><th>Per day</th></tr></thead>
+        <thead><tr><th>Rank</th><th class="l">Wallet</th><th>Points</th><th>Share</th><th>Per day</th><th class="refs" title="Wallets that used this wallet’s referral code">Refs</th></tr></thead>
         <tbody id="lbbody"></tbody>
       </table>
     </div>
