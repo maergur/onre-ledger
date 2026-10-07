@@ -554,7 +554,11 @@ th.l,td.l{text-align:left}
 .wlink:hover{text-decoration-color:var(--accent)}
 .muted{color:var(--muted)}
 .star{color:var(--accent)}
-@media (max-width:640px){ .refs{display:none} .rkids{padding-left:0} .rrow{grid-template-columns:1fr} }
+.rb{display:none} .pcmp{display:none}
+@media (max-width:640px){ .sh,.refs,.pfull{display:none} .pcmp{display:inline}
+  .mini td,.mini th{padding:8px 5px} .rkids{padding-left:0} .rrow{grid-template-columns:1fr}
+  .rb{display:block; width:max-content; margin-top:2px; padding:0 5px; border-radius:4px; background:var(--accent-soft);
+    color:var(--accent-ink); font-family:"IBM Plex Mono",monospace; font-size:11px; line-height:17px} }
 .solname{font-family:Inter,system-ui,sans-serif; font-weight:500; color:var(--ink)}
 @media (max-width:900px){ .addr-full{display:none} .addr-short{display:inline} }
 .lbsearch{position:relative; display:flex; align-items:center; margin:0}
@@ -692,7 +696,7 @@ tr.hit td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
       <div class="ph"><h2>Top 10</h2><button class="linkbtn" id="allbtn" type="button"></button></div>
       <div class="tscroll" style="border:0">
         <table class="mini">
-          <thead><tr><th>Rank</th><th class="l">Wallet</th><th>Points</th><th>Per day</th></tr></thead>
+          <thead><tr><th>Rank</th><th class="l">Wallet</th><th>Points</th><th>Per day</th><th class="refs" title="How many wallets used this wallet’s referral code. ★ = custom code">Referred</th></tr></thead>
           <tbody id="top10"></tbody>
         </table>
       </div>
@@ -758,7 +762,7 @@ tr.hit td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
     <p class="lbstatus" id="lbstatus" aria-live="polite"></p>
     <div class="tscroll">
       <table>
-        <thead><tr><th>Rank</th><th class="l">Wallet</th><th>Points</th><th>Share</th><th>Per day</th><th class="refs" title="Wallets that used this wallet’s referral code">Refs</th></tr></thead>
+        <thead><tr><th>Rank</th><th class="l">Wallet</th><th>Points</th><th class="sh">Share</th><th>Per day</th><th class="refs" title="How many wallets used this wallet’s referral code. ★ = custom code">Referred</th></tr></thead>
         <tbody id="lbbody"></tbody>
       </table>
     </div>

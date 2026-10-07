@@ -15,6 +15,11 @@ Object.keys(RF).forEach(function(i){ var r=RF[i][0]; if(typeof r==="number")(REF
 Object.keys(CD).forEach(function(i){ CODE_OWNER[CD[i][0].toLowerCase()]=+i; });
 function codeAt(i){ return CD[i]?CD[i][0]:""; }
 function refCount(i){ return CD[i]?CD[i][2]:(REFEREES[i]||[]).length; }
+function refTag(i){ var c=refCount(i); return c?'<span class="rb">'+n(c)+' ref</span>':''; }
+function refCell(i){
+  var c=refCount(i);
+  return '<td class="n refs">'+(c?n(c)+(CD[i]&&CD[i][1]?' <span class="star" title="Custom code: '+esc(codeAt(i))+'">★</span>':''):'<span class="muted">—</span>')+'</td>';
+}
 /* a wallet's label in lists: its .sol name when it has one, else the shortened address */
 function walletLabel(i,full){
   var nm=nameAt(i), ad=addrAt(i);
@@ -445,8 +450,8 @@ function rowRate(rt){
   return '<td class="n" style="color:'+(rt>0?"var(--good)":"var(--faint)")+'">'+(rt>0?"+"+compact(rt):"—")+'</td>';
 }
 document.getElementById("top10").innerHTML=Array.apply(null,Array(Math.min(10,N))).map(function(_,i){
-  return '<tr class="clickable" tabindex="0" data-i="'+i+'"><td class="rk">#'+(i+1)+'</td><td class="a l">'+walletLabel(i,false)+
-    '</td><td class="n">'+compact(ptsAt(i))+'</td>'+rowRate(rtsAt(i))+'</tr>';
+  return '<tr class="clickable" tabindex="0" data-i="'+i+'"><td class="rk">#'+(i+1)+'</td><td class="a l">'+walletLabel(i,false)+refTag(i)+
+    '</td><td class="n">'+compact(ptsAt(i))+'</td>'+rowRate(rtsAt(i))+refCell(i)+'</tr>';
 }).join("");
 document.getElementById("allbtn").textContent="See all "+n(N)+" wallets";
 document.getElementById("allbtn").onclick=function(){openStandings();};
@@ -625,9 +630,8 @@ function renderLB(){
   var start=page*PAGE, end=Math.min(tot,start+PAGE), out=[];
   for(var i=start;i<end;i++){
     var ix=idxAt(i);
-    out.push('<tr class="clickable'+(ix===hit?' hit':'')+'" tabindex="0" data-i="'+ix+'"><td class="rk">#'+n(ix+1)+'</td><td class="a l">'+walletLabel(ix,true)+
-      '</td><td class="n">'+n(ptsAt(ix))+'</td><td class="n">'+pct(ptsAt(ix)/D.system,4)+'</td>'+rowRate(rtsAt(ix))+
-      '<td class="n refs">'+(refCount(ix)?n(refCount(ix))+(CD[ix]&&CD[ix][1]?' <span class="star" title="Custom code: '+esc(codeAt(ix))+'">★</span>':''):'<span class="muted">—</span>')+'</td></tr>');
+    out.push('<tr class="clickable'+(ix===hit?' hit':'')+'" tabindex="0" data-i="'+ix+'"><td class="rk">#'+n(ix+1)+'</td><td class="a l">'+walletLabel(ix,true)+refTag(ix)+
+      '</td><td class="n"><span class="pfull">'+n(ptsAt(ix))+'</span><span class="pcmp">'+compact(ptsAt(ix))+'</span></td><td class="n sh">'+pct(ptsAt(ix)/D.system,4)+'</td>'+rowRate(rtsAt(ix))+refCell(ix)+'</tr>');
   }
   document.getElementById("lbbody").innerHTML=out.join("")||
     '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:26px">No wallet matches that filter.</td></tr>';
