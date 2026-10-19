@@ -102,22 +102,28 @@ Array.prototype.forEach.call(document.querySelectorAll("dialog.pop"),function(d)
 });
 
 /* ---------- emission series ---------- */
+/* S rows: [date, system, users, ts, credited?, removed?, new?, prev date?]. Where the flows are
+   known a day is split into points credited to existing wallets and points removed from them;
+   older rows only have the system total, so they show the net change. Either way a window is
+   divided by the CALENDAR days it spans: OnRe posts most points as one lump per day, so
+   dividing by elapsed hours inflates any short window that already holds a whole day's lump. */
 var S=D.series, daily=[];
 for(var k=1;k<S.length;k++){
   var a=S[k-1], b=S[k];
-  var d0=new Date(a[0]+"T00:00:00Z"), d1=new Date(b[0]+"T00:00:00Z");
-  var gap=Math.max(1,Math.round((d1-d0)/864e5));
-  /* Snapshots are captured at whatever hour the run happened, so when both carry a
-     capture time, divide by real elapsed hours rather than by whole calendar days. */
-  var hrs=null, exact=false;
-  if(a[3]&&b[3]){
-    var dh=(new Date(b[3])-new Date(a[3]))/36e5;
-    if(isFinite(dh)&&dh>0){hrs=dh; exact=true;}
-  }
-  if(hrs===null)hrs=gap*24;
-  daily.push({date:b[0], v:(b[1]-a[1])/(hrs/24), gap:gap, hrs:hrs, exact:exact});
+  var gap=Math.max(1,Math.round((new Date(b[0]+"T00:00:00Z")-new Date(a[0]+"T00:00:00Z"))/864e5));
+  var hrs=a[3]&&b[3]?(new Date(b[3])-new Date(a[3]))/36e5:null;
+  if(!(hrs>0))hrs=null;
+  var has=b.length>=7&&b[4]!==null;
+  var net=(b[1]-a[1])/gap;
+  daily.push({date:b[0], gap:gap, hrs:hrs, flows:has,
+    cred:has?b[4]/gap:null, rem:has?b[5]/gap:null, nw:has?b[6]/gap:null, net:net,
+    v:has?b[4]/gap:net});
 }
+/* the newest one-day window is still filling while the day runs (snapshots are hourly) */
+(function(){ var l=daily[daily.length-1], t=S[S.length-1][3];
+  l.partial=l.gap===1&&!!t&&+t.slice(11,13)<22; })();
 var latest=daily[daily.length-1];
+var lastFull=daily.filter(function(d){return !d.partial;}).pop()||latest;
 
 /* ---------- header + stat strip ---------- */
 document.getElementById("asof").innerHTML='<span class="upd">Updated </span>'+esc(D.asOf)+(D.asOfTime?" "+esc(D.asOfTime)+'<span class="tz"> (UTC+3)</span>':"");
@@ -127,14 +133,16 @@ document.getElementById("stats").innerHTML=[
    "Every point OnRe has credited to every wallet, summed from the "+D.asOf+" snapshot."],
   ["Wallets ranked",n(N),(N-S[S.length-2][2]>=0?"+":"")+n(N-S[S.length-2][2])+" since "+S[S.length-2][0],
    "Wallets holding at least one point. The change underneath counts wallets that appeared since the previous snapshot."],
-  ["Net change / day",compact(latest.v),latest.v<0?"supply fell":"measured "+latest.date,
-   "How much the total supply moved between the last two snapshots ("+(latest.exact?latest.hrs.toFixed(1)+" hours":latest.gap+" days")+
-   "), scaled to 24 hours. It nets everything together: points earned, new wallets arriving with points, balances that went down and clawbacks. It can go negative."],
+  [lastFull.flows?"Credited last day":"Net change / day",compact(lastFull.v),
+   lastFull.flows?(lastFull.date+(lastFull.rem<-1e6?" · "+compact(lastFull.rem)+" removed":"")):(lastFull.v<0?"supply fell":"measured "+lastFull.date),
+   lastFull.flows
+   ?"Points credited to wallets that already held points, over the last complete day ("+lastFull.date+(lastFull.gap>1?", averaged over "+lastFull.gap+" days":"")+"). Points removed from wallets and points held by wallets that first appeared are counted separately and shown in the chart. Today is left out until the day is over."
+   :"How much the total supply moved over the last complete day ("+lastFull.date+(lastFull.gap>1?", averaged over "+lastFull.gap+" days":"")+"). It nets everything together and can go negative."],
   ["Avg emission / day",compact(D.totalRate),spanDays+"-day average · "+n(D.movedCount)+" wallets earning",
    "Points credited to existing wallets per day, averaged over the last "+spanDays+" days ("+D.rateFrom+" → "+D.rateTo+
-   "). Each wallet's gain is divided by the elapsed time and the results are added up. Wallets that went down count as zero and wallets that are new in the window are left out. Projections and the airdrop calculator use this figure."]
+   "). Each wallet's gain is divided by the calendar days in that window and the results are added up. Wallets that went down count as zero and wallets that are new in the window are left out. Projections and the airdrop calculator use this figure."]
 ].map(function(r,ix){
-  var cls = ix===2 ? (latest.v<0?"s dn":"s up") : "s";
+  var cls = ix===2 ? (lastFull.v<0?"s dn":"s up") : "s";
   return '<div class="stat"><button type="button" class="k ktip" data-tip="'+esc(r[3])+'" aria-label="'+esc(r[0]+": "+r[3])+'">'+r[0]+
          '<span class="qi" aria-hidden="true">?</span></button><span class="v">'+r[1]+
          '</span><span class="'+cls+'">'+r[2]+'</span></div>';
@@ -176,27 +184,30 @@ var CH={view:"rate", range:30, sel:null};
 function chartData(){
   /* daily[i] describes the window ending at S[i+1]; pair each with its snapshot row */
   var rows=daily.map(function(d,i){ var b=S[i+1], a=S[i];
-    return {date:d.date, v:d.v, gap:d.gap, hrs:d.hrs, exact:d.exact, sys:b[1], users:b[2], dUsers:b[2]-a[2]}; });
+    return {date:d.date, v:d.v, gap:d.gap, hrs:d.hrs, flows:d.flows, cred:d.cred, rem:d.rem, nw:d.nw, net:d.net,
+            partial:d.partial, sys:b[1], users:b[2], dUsers:b[2]-a[2]}; });
   return CH.range?rows.slice(-CH.range):rows;
 }
 /* axis labels: drop trailing zeros so "100.00B" fits the gutter as "100B" */
 function tickFmt(v){ return compact(v).replace(/\.0+(?=\D*$)/,"").replace(/(\.\d*?)0+(?=\D*$)/,"$1"); }
-function fmtWin(d){ return d.exact?d.hrs.toFixed(1)+"h window":d.gap>1?d.gap+"-day window":"1-day window"; }
+function fmtWin(d){ return d.partial?"today so far"+(d.hrs?" ("+Math.round(d.hrs)+"h)":""):d.gap>1?d.gap+"-day average":"1 day"; }
 function readout(data,ix){
   var el=document.getElementById("chart-read"), d=data[ix], live=ix===data.length-1;
   var avg=data.reduce(function(s,x){return s+x.v;},0)/data.length;
   if(CH.view==="rate"){
-    var dv=avg?(d.v-avg)/Math.abs(avg)*100:0;
-    el.innerHTML='<span class="rv">'+compact(d.v)+'<span class="rd"> / day</span></span>'+
-      '<span class="rd">'+esc(d.date)+(live?" · latest":"")+'</span>'+
-      '<span class="rd '+(dv>=0?"up":"dn")+'">'+(dv>=0?"+":"")+dv.toFixed(0)+'% vs avg</span>'+
-      '<span class="rm">'+fmtWin(d)+' · '+(d.dUsers>=0?"+":"")+n(d.dUsers)+' wallets · supply '+compact(d.sys)+'</span>';
+    var full=data.filter(function(x){return !x.partial;}), avg=full.length?full.reduce(function(s,x){return s+x.v;},0)/full.length:d.v;
+    var dv=avg&&!d.partial?(d.v-avg)/Math.abs(avg)*100:null;
+    var parts=d.flows?["credited "+compact(d.cred),"removed "+compact(d.rem),"new wallets "+compact(d.nw)]:["net change in total supply"];
+    el.innerHTML='<span class="rv">'+(d.flows||d.v>=0?"+":"")+compact(d.v)+'<span class="rd"> / day</span></span>'+
+      '<span class="rd">'+esc(d.date)+(live&&!d.partial?" · latest":"")+'</span>'+
+      (dv===null?'<span class="rd">'+fmtWin(d)+'</span>':'<span class="rd '+(dv>=0?"up":"dn")+'">'+(dv>=0?"+":"")+dv.toFixed(0)+'% vs avg</span>')+
+      '<span class="rm">'+(dv===null?"":fmtWin(d)+' · ')+parts.join(" · ")+' · '+(d.dUsers>=0?"+":"")+n(d.dUsers)+' wallets</span>';
   }else{
     var first=data[0], gr=(d.sys-first.sys)/first.sys*100;
     el.innerHTML='<span class="rv">'+compact(d.sys)+'<span class="rd"> total</span></span>'+
       '<span class="rd">'+esc(d.date)+(live?" · latest":"")+'</span>'+
       '<span class="rd up">'+(gr>=0?"+":"")+gr.toFixed(1)+'% since '+esc(first.date.slice(5))+'</span>'+
-      '<span class="rm">'+n(d.users)+' wallets · '+(d.v>=0?"+":"")+compact(d.v)+'/day in this '+fmtWin(d).replace(" window","")+' window</span>';
+      '<span class="rm">'+n(d.users)+' wallets · '+(d.v>=0?"+":"")+compact(d.v)+'/day ('+fmtWin(d)+')</span>';
   }
 }
 function drawChart(){
@@ -204,7 +215,8 @@ function drawChart(){
   var data=chartData(), W=Math.max(280,cw), H=W<520?230:290, PL=W<520?46:56, PR=6, PT=12, PB=28, FS=11;
   var iw=W-PL-PR, ih=H-PT-PB, rate=CH.view==="rate";
   var vals=data.map(function(d){return rate?d.v:d.sys;});
-  var hi=Math.max.apply(null,vals.concat(rate?[0]:[])), lo=Math.min.apply(null,vals.concat(rate?[0]:[]));
+  var ext=rate?vals.concat(data.map(function(d){return d.flows?d.rem:0;}),[0]):vals;
+  var hi=Math.max.apply(null,ext), lo=Math.min.apply(null,ext);
   if(!rate){ var pad=(hi-lo)*0.08||hi*0.02; hi+=pad; lo=Math.max(0,lo-pad); }
   /* round tick step (1/2/2.5/5 x 10^n) so every axis label is a clean value */
   var raw=(hi-lo)/4, mag=Math.pow(10,Math.floor(Math.log10(raw||1))), step=mag;
@@ -223,12 +235,20 @@ function drawChart(){
   if(rate){
     out.push('<line x1="'+PL+'" y1="'+zero.toFixed(1)+'" x2="'+(W-PR)+'" y2="'+zero.toFixed(1)+'" stroke="var(--line-2)" stroke-width="1.5"/>');
     data.forEach(function(d,ix){
-      var x=PL+ix*bw+gap/2, w=Math.max(1,bw-gap);
-      var yy=y(d.v), top=Math.min(yy,zero), h=Math.max(1.5,Math.abs(yy-zero));
-      /* multi-day windows are averages, drawn lighter so a gap in the snapshots shows */
-      out.push('<rect class="b" data-i="'+ix+'" x="'+x.toFixed(1)+'" y="'+top.toFixed(1)+'" width="'+w.toFixed(1)+'" height="'+h.toFixed(1)+'" fill="'+(d.v<0?"var(--bad)":"var(--bar)")+'"'+(d.gap>1?' fill-opacity=".55"':'')+' rx="1.5"/>');
+      var x=PL+ix*bw+gap/2, w=Math.max(1,bw-gap), op=d.partial?' fill-opacity=".45"':d.gap>1?' fill-opacity=".6"':'';
+      function bar(v,fill,cls){
+        var yy=y(v), top=Math.min(yy,zero), h=Math.max(1.5,Math.abs(yy-zero));
+        return '<rect class="'+cls+'" data-i="'+ix+'" x="'+x.toFixed(1)+'" y="'+top.toFixed(1)+'" width="'+w.toFixed(1)+'" height="'+h.toFixed(1)+'" fill="'+fill+'"'+op+' rx="1.5"/>';
+      }
+      /* credited above zero; points removed from wallets below it, in red. Older days
+         without flows show the net supply change, red when it fell. */
+      if(d.flows){
+        out.push(bar(d.cred,"var(--bar)","b"));
+        if(d.rem<-Math.abs(hi-lo)*0.004)out.push(bar(d.rem,"var(--bad)","b"));
+      }else out.push(bar(d.v,d.v<0?"var(--bad)":"var(--bar)","b"));
     });
-    var avg=vals.reduce(function(s,x){return s+x;},0)/vals.length, ay=y(avg);
+    var full=data.filter(function(d){return !d.partial;}), fv=full.map(function(d){return d.v;});
+    var avg=(fv.length?fv:vals).reduce(function(s,x){return s+x;},0)/(fv.length||vals.length), ay=y(avg);
     out.push('<line x1="'+PL+'" y1="'+ay.toFixed(1)+'" x2="'+(W-PR)+'" y2="'+ay.toFixed(1)+'" stroke="var(--hold)" stroke-width="1.5" stroke-dasharray="5 4"/>');
     out.push('<text x="'+(W-PR-4)+'" y="'+(ay-6).toFixed(1)+'" text-anchor="end" fill="var(--ink-2)" font-family="IBM Plex Mono, monospace" font-size="'+FS+'" paint-order="stroke" stroke="var(--surface)" stroke-width="4">avg '+compact(avg)+'</text>');
   }else{
@@ -247,27 +267,28 @@ function drawChart(){
   out.push('<line id="ch-guide" y1="'+PT+'" y2="'+(PT+ih)+'" stroke="var(--ink-2)" stroke-width="1" stroke-dasharray="2 3" visibility="hidden"/>');
   out.push('<circle id="ch-dot" r="4.5" fill="var(--hold)" stroke="var(--surface)" stroke-width="2" visibility="hidden"/>');
   box.innerHTML='<svg width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="'+
-    (rate?"Net daily change in total points supply":"Total points supply")+' over the last '+data.length+' snapshots">'+out.join("")+'</svg>';
+    (rate?"Points credited per day":"Total points supply")+' over the last '+data.length+' snapshots">'+out.join("")+'</svg>';
   CH.geo={data:data, PL:PL, bw:bw, W:W, cx:cx, y:y};
   if(CH.sel!==null&&CH.sel>=data.length)CH.sel=null;
   select(CH.sel, true);
   var legend=document.getElementById("chart-legend");
   legend.innerHTML=rate?
-    '<span><i style="background:var(--bar)"></i>Net daily change</span><span><i style="background:var(--bar);opacity:.55"></i>Averaged over a gap</span>'+
-    '<span><i style="background:var(--bad)"></i>Supply fell</span><span><i style="background:var(--hold);height:2px;vertical-align:middle"></i>Range average</span>':
+    '<span><i style="background:var(--bar)"></i>Credited</span><span><i style="background:var(--bad)"></i>Removed</span>'+
+    '<span><i style="background:var(--bar);opacity:.45"></i>Today so far / gap average</span><span><i style="background:var(--hold);height:2px;vertical-align:middle"></i>Average of full days</span>':
     '<span><i style="background:var(--ink-2);height:2px;vertical-align:middle"></i>Total points supply</span>';
 }
 /* ix=null shows the latest snapshot without a highlight */
 function select(ix, quiet){
   var g=CH.geo, box=document.getElementById("chart"); if(!g)return;
-  CH.sel=ix; var shown=ix===null?g.data.length-1:ix;
+  CH.sel=ix; var shown=ix;
+  if(ix===null){ shown=g.data.length-1; if(g.data[shown].partial&&shown>0)shown--; }   /* default: last full day */
   var guide=document.getElementById("ch-guide"), dot=document.getElementById("ch-dot");
   box.classList.toggle("hov", ix!==null&&CH.view==="rate");
   box.querySelectorAll(".b.on").forEach(function(r){r.classList.remove("on");});
   if(ix!==null){
     var x=g.cx(ix).toFixed(1), d=g.data[ix];
     guide.setAttribute("x1",x); guide.setAttribute("x2",x); guide.setAttribute("visibility","visible");
-    if(CH.view==="rate"){ var r=box.querySelector('.b[data-i="'+ix+'"]'); if(r)r.classList.add("on"); dot.setAttribute("visibility","hidden"); }
+    if(CH.view==="rate"){ box.querySelectorAll('.b[data-i="'+ix+'"]').forEach(function(r){r.classList.add("on");}); dot.setAttribute("visibility","hidden"); }
     else{ dot.setAttribute("cx",x); dot.setAttribute("cy",g.y(d.sys).toFixed(1)); dot.setAttribute("visibility","visible"); }
   }else{ guide.setAttribute("visibility","hidden"); dot.setAttribute("visibility","hidden"); }
   readout(g.data, shown);

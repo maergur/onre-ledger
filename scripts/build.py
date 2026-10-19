@@ -147,7 +147,8 @@ def sources(rows, span):
                    - datetime.datetime.fromisoformat(ps["ts"])).total_seconds() / 3600.0
         else:
             hrs = (bdate - pd_).days * 24.0
-        rdays = hrs / 24.0
+        # OnRe credits most points as one lump per calendar day, so divide by days, not hours
+        rdays = max(1, (bdate - pd_).days)
         rfrom = pd_.isoformat()
         old = {r["address"]: lines_of(r) for r in ps["rows"]}
         rate = {}
@@ -233,7 +234,10 @@ def main():
                  - datetime.datetime.fromisoformat(old["ts"])).total_seconds() / 3600.0
     else:
         hours = max(1, (newest_d - base_d).days) * 24.0
-    days = max(hours / 24.0, 1e-6)
+    # Most points post as one lump per calendar day (loopscale, kamino), so a window is
+    # worth as many days as it spans on the calendar. Dividing by elapsed hours instead
+    # inflates any short window that already holds a whole day's lump.
+    days = max(1, (newest_d - base_d).days)
     prev = {r["address"]: r["points"] for r in old["rows"]}
     # Only well-formed Solana addresses and integer balances reach the page: the API is
     # third-party data and addresses end up in HTML, so anything else is dropped here.
@@ -271,6 +275,33 @@ def main():
         sysv, ts = snap_by_date.get(r[0], (r[1], r[3]))
         series.append([r[0], sysv, r[2], ts])
     series.sort()
+    # Per-day flows [credited, removed, new, previous date]: from consecutive snapshots where
+    # both are on disk, else whatever fetch.py stored in the series. Kept only when the
+    # previous date is the previous series row, so a bar never double-counts a span.
+    flows = {}
+    for r in base_series:
+        if len(r) >= 8 and r[4] is not None:
+            flows[r[0]] = r[4:8]
+    prev_pts, prev_day = None, None
+    for d, p_ in snaps:
+        pts_ = {r["address"]: r["points"] for r in load(p_)["rows"]}
+        if prev_pts is not None:
+            cred = rem = new = 0
+            for a, v in pts_.items():
+                if a in prev_pts:
+                    dv = v - prev_pts[a]
+                    if dv > 0:
+                        cred += dv
+                    else:
+                        rem += dv
+                else:
+                    new += v
+            rem -= sum(v for a, v in prev_pts.items() if a not in pts_)
+            flows[d.isoformat()] = [cred, rem, new, prev_day.isoformat()]
+        prev_pts, prev_day = pts_, d
+    for k in range(len(series)):
+        f = flows.get(series[k][0])
+        series[k] = series[k][:4] + (f if f and k and f[3] == series[k - 1][0] else [])
 
     # hand-edited public event log; global facts only, see the task file
     ev_path = os.path.join(SRC, "events.json")

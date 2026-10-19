@@ -83,6 +83,40 @@ def main():
     series = json.load(open(sp)) if os.path.exists(sp) else []
     series = [s for s in series if s[0] != date.isoformat()] + [[date.isoformat(), system, len(rows), ts]]
     series.sort()
+    # Per-day flows, kept in the series so they outlive the pruned snapshots:
+    # [date, system, users, ts, credited, removed, new] where credited/removed are the summed
+    # gains/losses of wallets present in both this day's and the previous day's snapshot, and
+    # new is the points held by wallets that first appeared. Backfills any row that lacks them
+    # while both snapshots are still in the store.
+    snaps = {}
+    for q in glob.glob(os.path.join(store, "leaderboard-full-*.json.gz")):
+        m = re.search(r"-(\d{8})\.json", q)
+        if m:
+            snaps[datetime.datetime.strptime(m.group(1), "%Y%m%d").date().isoformat()] = q
+    days = sorted(snaps)
+    for row in series:
+        if row[0] not in snaps or (len(row) > 4 and row[0] != date.isoformat()):
+            continue
+        i = days.index(row[0])
+        if i == 0:
+            continue
+        def pts(q):
+            with gzip.open(q, "rt") as f:
+                return {r["address"]: r["points"] for r in json.load(f)["rows"]}
+        A, B = pts(snaps[days[i - 1]]), pts(snaps[row[0]])
+        cred = rem = new = 0
+        for a, v in B.items():
+            if a in A:
+                d = v - A[a]
+                if d > 0:
+                    cred += d
+                else:
+                    rem += d
+            else:
+                new += v
+        rem -= sum(v for a, v in A.items() if a not in B)       # delisted wallets
+        del row[4:]
+        row += [cred, rem, new, days[i - 1]]
     json.dump(series, open(sp, "w"), separators=(",", ":"))
 
     cutoff = date - datetime.timedelta(days=KEEP_DAYS)
