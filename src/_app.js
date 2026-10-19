@@ -190,7 +190,7 @@ function chartData(){
 }
 /* axis labels: drop trailing zeros so "100.00B" fits the gutter as "100B" */
 function tickFmt(v){ return compact(v).replace(/\.0+(?=\D*$)/,"").replace(/(\.\d*?)0+(?=\D*$)/,"$1"); }
-function fmtWin(d){ return d.partial?"today so far"+(d.hrs?" ("+Math.round(d.hrs)+"h)":""):d.gap>1?d.gap+"-day average":"1 day"; }
+function fmtWin(d){ return d.partial?"today so far"+(d.hrs?", "+Math.round(d.hrs)+"h":""):d.gap>1?d.gap+"-day average":"1 day"; }
 function readout(data,ix){
   var el=document.getElementById("chart-read"), d=data[ix], live=ix===data.length-1;
   var avg=data.reduce(function(s,x){return s+x.v;},0)/data.length;
@@ -281,7 +281,8 @@ function drawChart(){
 function select(ix, quiet){
   var g=CH.geo, box=document.getElementById("chart"); if(!g)return;
   CH.sel=ix; var shown=ix;
-  if(ix===null){ shown=g.data.length-1; if(g.data[shown].partial&&shown>0)shown--; }   /* default: last full day */
+  /* default: the latest point; a per-day rate skips today's unfinished day, the supply total does not */
+  if(ix===null){ shown=g.data.length-1; if(CH.view==="rate"&&g.data[shown].partial&&shown>0)shown--; }
   var guide=document.getElementById("ch-guide"), dot=document.getElementById("ch-dot");
   box.classList.toggle("hov", ix!==null&&CH.view==="rate");
   box.querySelectorAll(".b.on").forEach(function(r){r.classList.remove("on");});
