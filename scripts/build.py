@@ -43,6 +43,9 @@ SRC = os.path.abspath(arg("--src", HERE))
 OUT = os.path.abspath(arg("--out", SRC))
 
 
+HIST_DAYS = 11   # wallet pop-up history: today so far + 10 full days (fetch.py keeps this many)
+
+
 def load(p):
     with (gzip.open(p, "rt") if p.endswith(".gz") else open(p)) as f:
         return json.load(f)
@@ -324,6 +327,36 @@ def main():
                 cd[str(pos[a])] = [c[0], c[1], c[2]]
         full["rf"], full["cd"] = rf, cd
         meta["refCov"] = round(covered / max(1, len(rows)), 4)
+    # Daily history for the wallet pop-up: points gained between consecutive snapshots
+    # over the last HIST_DAYS days. Public leaderboard totals only. Columns run oldest ->
+    # newest as [end date, elapsed hours]; each wallet that moved gets one delta per
+    # column, or null where it was not yet on the board at the column's start.
+    hsnaps = [p_ for d, p_ in snaps if (newest_d - d).days <= HIST_DAYS]
+    if len(hsnaps) >= 2:
+        hist_cols, hd, frames = [], {}, []
+        for p_ in hsnaps:
+            sd = load(p_)
+            frames.append((sd["date"], sd.get("ts") or hist_ts.get(sd["date"]),
+                           {r["address"]: r["points"] for r in sd["rows"]}))
+        for (_, ta, _), (db, tb, _) in zip(frames, frames[1:]):
+            hrs = None
+            if ta and tb:
+                hrs = round((datetime.datetime.fromisoformat(tb)
+                             - datetime.datetime.fromisoformat(ta)).total_seconds() / 3600.0, 1)
+            hist_cols.append([db, hrs])
+        for i, r in enumerate(rows):
+            a, out_, moved = r["address"], [], False
+            for (_, _, A), (_, _, B) in zip(frames, frames[1:]):
+                if a not in A:
+                    out_.append(None)
+                else:
+                    v = B.get(a, 0) - A[a]
+                    moved = moved or v != 0
+                    out_.append(v)
+            if moved:
+                hd[str(i)] = out_
+        meta["hist"] = hist_cols
+        full["hd"] = hd
     src, bd, br = sources(rows, span)
     if src:
         meta["sources"] = src

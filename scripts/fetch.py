@@ -17,7 +17,7 @@ import json, os, sys, glob, gzip, re, subprocess, time, datetime
 from concurrent.futures import ThreadPoolExecutor
 
 API = "https://rewards.api.onre.finance/api/v1/points/leaderboard?page=%d&size=1000"
-KEEP_DAYS = 8
+KEEP_DAYS = 11                   # build.py's per-wallet daily history needs 11 days
 TZ = datetime.timedelta(hours=3)          # OnRe day boundaries are read in UTC+3
 
 

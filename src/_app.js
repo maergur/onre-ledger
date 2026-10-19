@@ -627,6 +627,31 @@ function wireCalc(points,rate){
   ids.forEach(function(k){el[k].addEventListener("input",run);});
   run();
 }
+/* ---------- per-wallet daily history ---------- */
+/* D.hist = [[end date, elapsed hours], ...] oldest -> newest; FULL.hd[idx] = one delta per
+   column (null = not on the board yet). Wallets missing from hd did not move at all. */
+function walletHistory(idx){
+  var H=D.hist; if(!H||!H.length||!FULL.hd)return "";
+  var v=FULL.hd[idx]||H.map(function(){return seenAt(idx)===1?0:null;});
+  var hi=0; v.forEach(function(x){ if(x!==null)hi=Math.max(hi,Math.abs(x)); });
+  var full=0, nfull=0, rows=[];
+  for(var k=H.length-1;k>=0;k--){
+    var date=H[k][0], hrs=H[k][1], x=v[k], last=k===H.length-1;
+    var partial=last&&hrs!==null&&hrs<20;
+    var label=new Date(date+"T00:00:00Z").toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric",timeZone:"UTC"});
+    var note=partial?"so far · "+Math.round(hrs)+"h":(hrs!==null&&(hrs<20||hrs>28))?Math.round(hrs)+"h window":"";
+    if(x!==null&&!partial){ full+=x; nfull++; }
+    var val=x===null?'<span class="muted">not ranked</span>':x===0?'<span class="muted">0</span>':(x>0?"+":"")+n(x);
+    var w=x&&hi?Math.max(2,Math.abs(x)/hi*100):0;
+    rows.push('<tr><td>'+label+(note?' <span class="hnote">'+note+'</span>':'')+'</td><td class="n">'+val+'</td>'+
+      '<td class="hcell"><span class="hbar'+(x<0?' neg':'')+(partial?' part':'')+'" style="width:'+w.toFixed(1)+'%"></span></td></tr>');
+  }
+  return '<div class="srcwrap whist"><div class="srch"><h3>Points per day</h3>'+
+      (nfull?'<span class="hint">avg '+(full/nfull>=0?"+":"")+compact(full/nfull)+' / day over '+nfull+' days</span>':'')+'</div>'+
+    '<div class="tscroll"><table class="htab"><thead><tr><th>Day</th><th>Points earned</th><th><span class="sr">Relative size</span></th></tr></thead>'+
+    '<tbody>'+rows.join("")+'</tbody></table></div>'+
+    '<p class="hint">Change in the wallet’s total between two consecutive daily snapshots, labelled by the later one. OnRe often credits points in daily lumps, so a late lump shows as a quiet day followed by a big one. A day can go negative when OnRe adjusts a balance.</p></div>';
+}
 function openWallet(idx,solName){
   var addr=addrAt(idx), p=ptsAt(idx), rate=rtsAt(idx), rank=idx+1;
   var share=p/D.system, pctile=(1-idx/N)*100, known=seenAt(idx)===1;
@@ -659,6 +684,7 @@ function openWallet(idx,solName){
         '<div class="stat"><span class="k">Measured / day</span><span class="v">'+compact(rate)+
           '</span><span class="s">'+(Math.round(D.rateDays*10)/10)+'-day average</span></div>'+
       '</div>'+
+      walletHistory(idx)+
       '<div class="tscroll" style="margin-top:18px"><table>'+
         '<thead><tr><th>Horizon</th><th>Points</th><th>Rank</th><th>Move</th></tr></thead>'+
         '<tbody>'+rows+'</tbody></table></div>'+

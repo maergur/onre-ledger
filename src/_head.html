@@ -557,6 +557,14 @@ dialog.pop::backdrop{background:rgba(8,16,18,.52); backdrop-filter:blur(2px)}
 .pop-body .projwrap{margin:0; padding:0; border:0; background:none; box-shadow:none}
 .wgrid{display:grid; grid-template-columns:minmax(0,1.15fr) minmax(0,1fr); gap:28px; align-items:start}
 .wgrid .srcwrap{margin-top:0}
+.wmain .whist{margin-top:18px}
+.htab td,.htab th{white-space:nowrap}
+.htab th:last-child,.htab td.hcell{width:38%}
+.hnote{font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--muted); margin-left:4px}
+.hcell{padding-left:4px}
+.hbar{display:block; height:8px; border-radius:2px; background:var(--bar)}
+.hbar.neg{background:var(--bad)} .hbar.part{opacity:.5}
+@media (max-width:480px){ .htab th:last-child,.htab td.hcell{width:28%} .hnote{display:block; margin:2px 0 0} }
 #dlg-wallet #result{margin-top:0}
 @media (max-width:980px){ .wgrid{grid-template-columns:minmax(0,1fr)} }
 th.l,td.l{text-align:left}
