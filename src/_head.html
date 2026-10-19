@@ -292,6 +292,24 @@ details.tl-more p{margin:8px 0 0; font-size:13px; color:var(--ink-2); max-width:
 .legend i{display:inline-block; width:9px; height:9px; border-radius:2px; margin-right:5px;
   vertical-align:baseline}
 svg{display:block; width:100%; height:auto}
+.cctl{display:flex; gap:8px; flex-wrap:wrap}
+.seg{display:inline-flex; border:1px solid var(--line); border-radius:7px; overflow:hidden; background:var(--ground)}
+.seg button{font:inherit; font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.04em;
+  padding:5px 10px; border:0; background:transparent; color:var(--muted); cursor:pointer; min-height:28px}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button:hover{color:var(--ink)}
+.seg button[aria-pressed="true"]{background:var(--surface-2); color:var(--ink); font-weight:500}
+.seg button:focus-visible{outline:2px solid var(--accent); outline-offset:-2px}
+.readout{display:flex; align-items:baseline; gap:4px 12px; flex-wrap:wrap; min-height:44px; margin:-4px 0 8px}
+.readout .rv{font-size:22px; font-weight:500; font-variant-numeric:tabular-nums; color:var(--ink)}
+.readout .rd{font-family:"IBM Plex Mono",monospace; font-size:12px; color:var(--ink-2)}
+.readout .rm{font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--muted); flex-basis:100%}
+.readout .up{color:var(--good)} .readout .dn{color:var(--bad)}
+#chart{position:relative; touch-action:pan-y; cursor:crosshair; border-radius:6px}
+#chart:focus-visible{outline:2px solid var(--accent); outline-offset:4px}
+#chart .b{transition:opacity .12s}
+#chart.hov .b{opacity:.35} #chart.hov .b.on{opacity:1}
+.sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap}
 
 footer{margin:56px 0 40px; padding-top:22px; border-top:1px solid var(--line);
   font-size:13px; color:var(--muted)}
@@ -675,12 +693,20 @@ tr.hit td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
     </div>
 
     <div class="panel a-chart">
-      <div class="ph"><h2>Daily emission</h2><span class="eyebrow">Last 30 snapshots</span></div>
-      <div id="chart"></div>
-      <div class="legend push">
-        <span><i style="background:var(--bar)"></i>Net daily change</span>
-        <span><i style="background:var(--bad)"></i>Supply fell (clawback)</span>
+      <div class="ph"><h2>Daily emission</h2>
+        <div class="cctl">
+          <div class="seg" role="group" aria-label="Chart view" id="chart-view">
+            <button type="button" data-v="rate" aria-pressed="true">Per day</button><button type="button" data-v="supply" aria-pressed="false">Supply</button>
+          </div>
+          <div class="seg" role="group" aria-label="Chart range" id="chart-range">
+            <button type="button" data-r="14" aria-pressed="false">14</button><button type="button" data-r="30" aria-pressed="true">30</button><button type="button" data-r="0" aria-pressed="false">All</button>
+          </div>
+        </div>
       </div>
+      <div class="readout" id="chart-read" aria-live="polite"></div>
+      <div id="chart" tabindex="0" aria-describedby="chart-help"></div>
+      <div class="legend push" id="chart-legend"></div>
+      <p class="sr" id="chart-help">Use the left and right arrow keys to step through snapshots.</p>
     </div>
 
     <div class="panel a-conc">

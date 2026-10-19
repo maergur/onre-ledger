@@ -169,40 +169,135 @@ document.getElementById("stats").innerHTML=[
 })();
 
 /* ---------- emission chart ---------- */
-/* Drawn at the container's real pixel width so axis labels stay 11px on every screen. */
+/* Drawn at the container's real pixel width so axis labels stay 11px on every screen.
+   Interactive: hover / touch / arrow keys pick a snapshot and the readout above the
+   chart describes it; the range and view toggles redraw. */
+var CH={view:"rate", range:30, sel:null};
+function chartData(){
+  /* daily[i] describes the window ending at S[i+1]; pair each with its snapshot row */
+  var rows=daily.map(function(d,i){ var b=S[i+1], a=S[i];
+    return {date:d.date, v:d.v, gap:d.gap, hrs:d.hrs, exact:d.exact, sys:b[1], users:b[2], dUsers:b[2]-a[2]}; });
+  return CH.range?rows.slice(-CH.range):rows;
+}
+/* axis labels: drop trailing zeros so "100.00B" fits the gutter as "100B" */
+function tickFmt(v){ return compact(v).replace(/\.0+(?=\D*$)/,"").replace(/(\.\d*?)0+(?=\D*$)/,"$1"); }
+function fmtWin(d){ return d.exact?d.hrs.toFixed(1)+"h window":d.gap>1?d.gap+"-day window":"1-day window"; }
+function readout(data,ix){
+  var el=document.getElementById("chart-read"), d=data[ix], live=ix===data.length-1;
+  var avg=data.reduce(function(s,x){return s+x.v;},0)/data.length;
+  if(CH.view==="rate"){
+    var dv=avg?(d.v-avg)/Math.abs(avg)*100:0;
+    el.innerHTML='<span class="rv">'+compact(d.v)+'<span class="rd"> / day</span></span>'+
+      '<span class="rd">'+esc(d.date)+(live?" · latest":"")+'</span>'+
+      '<span class="rd '+(dv>=0?"up":"dn")+'">'+(dv>=0?"+":"")+dv.toFixed(0)+'% vs avg</span>'+
+      '<span class="rm">'+fmtWin(d)+' · '+(d.dUsers>=0?"+":"")+n(d.dUsers)+' wallets · supply '+compact(d.sys)+'</span>';
+  }else{
+    var first=data[0], gr=(d.sys-first.sys)/first.sys*100;
+    el.innerHTML='<span class="rv">'+compact(d.sys)+'<span class="rd"> total</span></span>'+
+      '<span class="rd">'+esc(d.date)+(live?" · latest":"")+'</span>'+
+      '<span class="rd up">'+(gr>=0?"+":"")+gr.toFixed(1)+'% since '+esc(first.date.slice(5))+'</span>'+
+      '<span class="rm">'+n(d.users)+' wallets · '+(d.v>=0?"+":"")+compact(d.v)+'/day in this '+fmtWin(d).replace(" window","")+' window</span>';
+  }
+}
 function drawChart(){
   var box=document.getElementById("chart"), cw=Math.round(box.clientWidth||620);
-  var data=daily.slice(-30), W=Math.max(280,cw), H=W<520?230:290, PL=W<520?46:56, PR=6, PT=12, PB=28, FS=11;
-  var iw=W-PL-PR, ih=H-PT-PB;
-  var vals=data.map(function(d){return d.v;});
-  var hi=Math.max.apply(null,vals.concat([0])), lo=Math.min.apply(null,vals.concat([0]));
+  var data=chartData(), W=Math.max(280,cw), H=W<520?230:290, PL=W<520?46:56, PR=6, PT=12, PB=28, FS=11;
+  var iw=W-PL-PR, ih=H-PT-PB, rate=CH.view==="rate";
+  var vals=data.map(function(d){return rate?d.v:d.sys;});
+  var hi=Math.max.apply(null,vals.concat(rate?[0]:[])), lo=Math.min.apply(null,vals.concat(rate?[0]:[]));
+  if(!rate){ var pad=(hi-lo)*0.08||hi*0.02; hi+=pad; lo=Math.max(0,lo-pad); }
   /* round tick step (1/2/2.5/5 x 10^n) so every axis label is a clean value */
   var raw=(hi-lo)/4, mag=Math.pow(10,Math.floor(Math.log10(raw||1))), step=mag;
   [1,2,2.5,5,10].some(function(m){ step=m*mag; return m*mag>=raw; });
   hi=Math.ceil(hi/step)*step; lo=Math.floor(lo/step)*step;
   var ticks=[]; for(var tv=lo; tv<=hi+step/2; tv+=step) ticks.push(tv);
   function y(v){return PT+ih-((v-lo)/(hi-lo))*ih;}
-  var bw=iw/data.length, gap=Math.min(4,bw*0.28), zero=y(0), out=[];
+  var bw=iw/data.length, gap=Math.min(4,bw*0.28), zero=y(Math.max(lo,0)), out=[];
   var every=Math.max(1,Math.ceil(52/bw));           /* one date label per ~52px */
+  function cx(ix){return PL+ix*bw+bw/2;}
   for(var t=0;t<ticks.length;t++){
     var v=ticks[t], yy=y(v);
     out.push('<line x1="'+PL+'" y1="'+yy.toFixed(1)+'" x2="'+(W-PR)+'" y2="'+yy.toFixed(1)+'" stroke="var(--line)" stroke-width="1"/>');
-    out.push('<text x="'+(PL-8)+'" y="'+(yy+4).toFixed(1)+'" text-anchor="end" fill="var(--faint)" font-family="IBM Plex Mono, monospace" font-size="'+FS+'">'+compact(v)+'</text>');
+    out.push('<text x="'+(PL-8)+'" y="'+(yy+4).toFixed(1)+'" text-anchor="end" fill="var(--faint)" font-family="IBM Plex Mono, monospace" font-size="'+FS+'">'+tickFmt(v)+'</text>');
   }
-  out.push('<line x1="'+PL+'" y1="'+zero.toFixed(1)+'" x2="'+(W-PR)+'" y2="'+zero.toFixed(1)+'" stroke="var(--line-2)" stroke-width="1.5"/>');
+  if(rate){
+    out.push('<line x1="'+PL+'" y1="'+zero.toFixed(1)+'" x2="'+(W-PR)+'" y2="'+zero.toFixed(1)+'" stroke="var(--line-2)" stroke-width="1.5"/>');
+    data.forEach(function(d,ix){
+      var x=PL+ix*bw+gap/2, w=Math.max(1,bw-gap);
+      var yy=y(d.v), top=Math.min(yy,zero), h=Math.max(1.5,Math.abs(yy-zero));
+      /* multi-day windows are averages, drawn lighter so a gap in the snapshots shows */
+      out.push('<rect class="b" data-i="'+ix+'" x="'+x.toFixed(1)+'" y="'+top.toFixed(1)+'" width="'+w.toFixed(1)+'" height="'+h.toFixed(1)+'" fill="'+(d.v<0?"var(--bad)":"var(--bar)")+'"'+(d.gap>1?' fill-opacity=".55"':'')+' rx="1.5"/>');
+    });
+    var avg=vals.reduce(function(s,x){return s+x;},0)/vals.length, ay=y(avg);
+    out.push('<line x1="'+PL+'" y1="'+ay.toFixed(1)+'" x2="'+(W-PR)+'" y2="'+ay.toFixed(1)+'" stroke="var(--hold)" stroke-width="1.5" stroke-dasharray="5 4"/>');
+    out.push('<text x="'+(W-PR-4)+'" y="'+(ay-6).toFixed(1)+'" text-anchor="end" fill="var(--ink-2)" font-family="IBM Plex Mono, monospace" font-size="'+FS+'" paint-order="stroke" stroke="var(--surface)" stroke-width="4">avg '+compact(avg)+'</text>');
+  }else{
+    var pts=data.map(function(d,ix){return cx(ix).toFixed(1)+","+y(d.sys).toFixed(1);});
+    out.push('<path d="M'+cx(0).toFixed(1)+','+(PT+ih)+' L'+pts.join(" L")+' L'+cx(data.length-1).toFixed(1)+','+(PT+ih)+' Z" fill="var(--bar)" fill-opacity=".14"/>');
+    out.push('<polyline points="'+pts.join(" ")+'" fill="none" stroke="var(--ink-2)" stroke-width="2" stroke-linejoin="round"/>');
+  }
   data.forEach(function(d,ix){
-    var x=PL+ix*bw+gap/2, w=Math.max(1,bw-gap);
-    var yy=y(d.v), top=Math.min(yy,zero), h=Math.max(1.5,Math.abs(yy-zero));
-    out.push('<rect x="'+x.toFixed(1)+'" y="'+top.toFixed(1)+'" width="'+w.toFixed(1)+'" height="'+h.toFixed(1)+'" fill="'+(d.v<0?"var(--bad)":"var(--bar)")+'" rx="1.5"><title>'+
-      d.date+": "+compact(d.v)+"/day"+(d.exact?" (normalised over "+d.hrs.toFixed(1)+"h)":d.gap>1?" (averaged over "+d.gap+" days)":"")+'</title></rect>');
     var last=ix===data.length-1;
     if((ix%every===0&&data.length-1-ix>=every)||last){
-      var tx=Math.min(W-PR-18,Math.max(PL+18,x+w/2));
+      var tx=Math.min(W-PR-18,Math.max(PL+18,cx(ix)));
       out.push('<text x="'+tx.toFixed(1)+'" y="'+(H-8)+'" text-anchor="middle" fill="var(--faint)" font-family="IBM Plex Mono, monospace" font-size="'+FS+'">'+d.date.slice(5)+'</text>');
     }
   });
-  box.innerHTML='<svg width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Net daily change in total points supply over the last 30 snapshots">'+out.join("")+'</svg>';
+  /* hover guide + point, positioned by select() */
+  out.push('<line id="ch-guide" y1="'+PT+'" y2="'+(PT+ih)+'" stroke="var(--ink-2)" stroke-width="1" stroke-dasharray="2 3" visibility="hidden"/>');
+  out.push('<circle id="ch-dot" r="4.5" fill="var(--hold)" stroke="var(--surface)" stroke-width="2" visibility="hidden"/>');
+  box.innerHTML='<svg width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="'+
+    (rate?"Net daily change in total points supply":"Total points supply")+' over the last '+data.length+' snapshots">'+out.join("")+'</svg>';
+  CH.geo={data:data, PL:PL, bw:bw, W:W, cx:cx, y:y};
+  if(CH.sel!==null&&CH.sel>=data.length)CH.sel=null;
+  select(CH.sel, true);
+  var legend=document.getElementById("chart-legend");
+  legend.innerHTML=rate?
+    '<span><i style="background:var(--bar)"></i>Net daily change</span><span><i style="background:var(--bar);opacity:.55"></i>Averaged over a gap</span>'+
+    '<span><i style="background:var(--bad)"></i>Supply fell</span><span><i style="background:var(--hold);height:2px;vertical-align:middle"></i>Range average</span>':
+    '<span><i style="background:var(--ink-2);height:2px;vertical-align:middle"></i>Total points supply</span>';
 }
+/* ix=null shows the latest snapshot without a highlight */
+function select(ix, quiet){
+  var g=CH.geo, box=document.getElementById("chart"); if(!g)return;
+  CH.sel=ix; var shown=ix===null?g.data.length-1:ix;
+  var guide=document.getElementById("ch-guide"), dot=document.getElementById("ch-dot");
+  box.classList.toggle("hov", ix!==null&&CH.view==="rate");
+  box.querySelectorAll(".b.on").forEach(function(r){r.classList.remove("on");});
+  if(ix!==null){
+    var x=g.cx(ix).toFixed(1), d=g.data[ix];
+    guide.setAttribute("x1",x); guide.setAttribute("x2",x); guide.setAttribute("visibility","visible");
+    if(CH.view==="rate"){ var r=box.querySelector('.b[data-i="'+ix+'"]'); if(r)r.classList.add("on"); dot.setAttribute("visibility","hidden"); }
+    else{ dot.setAttribute("cx",x); dot.setAttribute("cy",g.y(d.sys).toFixed(1)); dot.setAttribute("visibility","visible"); }
+  }else{ guide.setAttribute("visibility","hidden"); dot.setAttribute("visibility","hidden"); }
+  readout(g.data, shown);
+}
+(function(){
+  var box=document.getElementById("chart");
+  function pick(e){
+    var g=CH.geo; if(!g)return;
+    var r=box.getBoundingClientRect(), x=(e.clientX-r.left)*(g.W/r.width);
+    select(Math.max(0,Math.min(g.data.length-1,Math.floor((x-g.PL)/g.bw))));
+  }
+  box.addEventListener("pointermove",pick);
+  box.addEventListener("pointerdown",pick);
+  box.addEventListener("pointerleave",function(e){ if(e.pointerType==="mouse")select(null); });
+  box.addEventListener("keydown",function(e){
+    var g=CH.geo; if(!g)return; var last=g.data.length-1, cur=CH.sel===null?last:CH.sel, nx=null;
+    if(e.key==="ArrowLeft")nx=Math.max(0,cur-1); else if(e.key==="ArrowRight")nx=Math.min(last,cur+1);
+    else if(e.key==="Home")nx=0; else if(e.key==="End")nx=last; else if(e.key==="Escape"){ select(null); return; }
+    if(nx!==null){ e.preventDefault(); select(nx); }
+  });
+  box.addEventListener("blur",function(){ select(null); });
+  function seg(id,attr,apply){
+    var el=document.getElementById(id);
+    el.addEventListener("click",function(e){ var b=e.target.closest("button"); if(!b)return;
+      el.querySelectorAll("button").forEach(function(x){x.setAttribute("aria-pressed",x===b?"true":"false");});
+      apply(b.dataset[attr]); CH.sel=null; drawChart(); });
+  }
+  seg("chart-view","v",function(v){CH.view=v;});
+  seg("chart-range","r",function(r){CH.range=+r;});
+})();
 drawChart();
 (function(){ var rt, lastW=0; addEventListener("resize",function(){ clearTimeout(rt); rt=setTimeout(function(){
   var w=document.getElementById("chart").clientWidth; if(Math.abs(w-lastW)>8){ lastW=w; drawChart(); } },150); }); })();
