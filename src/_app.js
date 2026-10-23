@@ -76,7 +76,7 @@ function rateWindow(){
     : d+"-day average, "+D.rateFrom+" → "+D.rateTo;
 }
 
-/* ---------- hash routing (plain tokens only: w-<addr>, event-<date>, standings, about) ---------- */
+/* ---------- hash routing (plain tokens only: w-<addr>, event-<date>, events, standings, about) ---------- */
 function setHash(h){
   try{ history.replaceState(null,"",h?"#"+h:location.pathname+location.search); }catch(e){}
 }
@@ -326,6 +326,7 @@ drawChart();
 
 /* ---------- events ---------- */
 var EV=(D.events||[]).slice();
+var openEventsList=function(){};
 var asofD=new Date(D.asOf+"T00:00:00Z");
 function rel(d){
   var g=Math.round((new Date(d+"T00:00:00Z")-asofD)/864e5);
@@ -364,6 +365,8 @@ function renderBell(){
     document.getElementById("nsum").textContent=top.summary;
     nb.dataset.ev=EV.indexOf(top);
   }else nb.hidden=true;
+  /* the main-view pointer stands in for the banner once nothing is unread */
+  document.getElementById("evstrip").hidden=!EV.length||!nb.hidden;
 }
 (function(){
   var el=document.getElementById("evlist");
@@ -383,7 +386,18 @@ function renderBell(){
     panel.hidden=!o; bell.setAttribute("aria-expanded",o?"true":"false");
     /* on phones the panel is fixed full-width; start it just under the bell so the bell stays tappable */
     panel.style.top = (o&&matchMedia("(max-width:640px)").matches) ? (bell.getBoundingClientRect().bottom+10)+"px" : "";
+    if(o)setHash("events"); else if(location.hash==="#events")setHash("");
   }
+  openEventsList=function(){ setOpen(true); };
+  var latest=EV.filter(function(e){return e.kind!=="ahead";})[0];
+  if(latest){
+    var li=EV.indexOf(latest);
+    document.getElementById("evlatest").textContent=latest.title;
+    document.getElementById("evlatest").onclick=function(){ markSeen(); openEvent(li); };
+    document.getElementById("evrel").textContent=latest.date+" · "+rel(latest.date);
+  }
+  document.getElementById("evall").textContent=EV.length>1?"All "+EV.length+" events →":"All events →";
+  document.getElementById("evall").addEventListener("click",function(e){ e.stopPropagation(); setOpen(true); });
   bell.addEventListener("click",function(e){
     e.stopPropagation();
     var opening=panel.hidden; setOpen(opening);
@@ -996,6 +1010,7 @@ document.getElementById("aboutbtn").onclick=function(){openDlg("dlg-about","abou
   else if(h.indexOf("event-")===0){
     for(var i=0;i<EV.length;i++) if(EV[i].date===h.slice(6)){ openEvent(i); break; }
   }
+  else if(h==="events") openEventsList();
   else if(h==="standings") openStandings();
   else if(h==="about") openDlg("dlg-about");
   else if(h==="sources"&&SRC) openDlg("dlg-sources");

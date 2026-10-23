@@ -423,7 +423,9 @@ tr:not(.proto) .meter i{opacity:.55}
 @media (max-width:480px){ .conc{grid-template-columns:minmax(0,1fr)} .conc-chart{max-width:200px; margin-inline:auto; width:100%} }
 /* ---------- notifications ---------- */
 .bellwrap{position:relative; display:inline-flex}
-.bell{position:relative}
+.bell{position:relative; display:inline-flex; align-items:center; gap:6px; height:32px; padding:0 11px 0 9px}
+.bell svg{width:16px; height:16px; flex:none}
+@media (max-width:640px){ .bell-lbl{display:none} .bell{width:34px; padding:0; justify-content:center} }
 .badge{position:absolute; top:-6px; right:-6px; min-width:17px; height:17px; padding:0 4px; border-radius:9px;
   background:var(--bad); color:#fff; font-family:"IBM Plex Mono",monospace; font-size:11px; font-weight:500; line-height:17px;
   text-align:center; box-shadow:0 0 0 2px var(--ground)}
@@ -435,6 +437,9 @@ tr:not(.proto) .meter i{opacity:.55}
 .ev.unread .tl-date::after{content:"NEW"; margin-left:8px; padding:1px 6px; border-radius:4px; background:var(--accent-soft);
   color:var(--accent); font-size:11px; letter-spacing:.08em}
 @media (max-width:640px){ .notif{position:fixed; top:58px; left:16px; right:16px; width:auto} }
+.evstrip{display:flex; align-items:baseline; gap:4px 12px; flex-wrap:wrap; margin-top:16px; font-size:13px; color:var(--muted)}
+.evstrip .evlatest{color:var(--ink); text-align:left; font-weight:500}
+.evstrip .evall{margin-left:auto; white-space:nowrap}
 .newsbar{border-bottom:1px solid var(--line); background:var(--surface)}
 .newsin{display:flex; align-items:center; gap:12px; padding-block:9px; min-width:0}
 .nstripe{width:4px; align-self:stretch; border-radius:2px; background:var(--accent); flex:none}
@@ -628,8 +633,9 @@ tr.hit td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
     <span class="asof" id="asof"></span>
     <a class="byline" id="byline" href="#" target="_blank" rel="noopener" hidden></a>
     <span class="bellwrap" id="events-sec">
-      <button class="tbtn iconbtn bell" id="bell" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="notif" aria-label="What changed">
+      <button class="tbtn bell" id="bell" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="notif" aria-label="What changed">
         <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2.6a5 5 0 0 0-5 5v2.7c0 .7-.3 1.4-.8 1.9l-.9.9h13.4l-.9-.9c-.5-.5-.8-1.2-.8-1.9V7.6a5 5 0 0 0-5-5z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8 15.4a2 2 0 0 0 4 0" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        <span class="bell-lbl">Events</span>
         <span class="badge" id="bellcount" hidden></span>
       </button>
       <div class="notif" id="notif" role="dialog" aria-label="What changed" hidden>
@@ -665,6 +671,13 @@ tr.hit td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
   </div>
 
   <div class="stats" id="stats"></div>
+
+  <div class="evstrip" id="evstrip" hidden>
+    <span class="eyebrow">Latest event</span>
+    <button class="linkbtn evlatest" id="evlatest" type="button"></button>
+    <span class="evrel" id="evrel"></span>
+    <button class="linkbtn evall" id="evall" type="button"></button>
+  </div>
 
   <nav class="tabs" role="tablist" aria-label="Sections">
     <button class="tab" role="tab" type="button" id="tab-btn-ledger" aria-controls="tab-ledger" aria-selected="true">Points Ledger</button>
