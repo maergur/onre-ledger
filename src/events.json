@@ -43,9 +43,9 @@
  },
  {
   "date": "2026-10-23",
-  "kind": "warn",
-  "title": "Two returning wallets added 9.39B, and neither is earning",
-  "summary": "Two wallets missing from every earlier snapshot appeared on 10-22 with 9.39B points between them, and over the following day they earned almost nothing.",
+  "kind": "neutral",
+  "title": "Two returning wallets added 9.39B; both hold no ONyc",
+  "summary": "Two wallets missing from every earlier snapshot appeared on 10-22 with 9.39B points between them; they earn almost nothing because they no longer hold any ONyc.",
   "impact": [
    [
     "+9.39B",
@@ -56,10 +56,10 @@
     "everyone else's share"
    ],
    [
-    "713",
-    "points earned in a day"
+    "0",
+    "ONyc held"
    ]
   ],
-  "body": "Between the 10-21 and 10-22 snapshots, 4RxY3hB6 entered at #3 with 7,772,765,237 points and 4fdPprcw entered at #17 with 1,612,013,539. Neither address appears in any earlier snapshot, but their points sit on markets that closed in 2025 and early 2026 (AUG-2025 and JAN-2026 Exponent positions, among others). That suggests wallets that had been hidden from the leaderboard and were listed again, rather than new users. Adding 9.38B to a supply of about 278B lowered every other wallet's share by about 3.4% in a single day, with no change in their own points. Over the next 24.6 hours 4RxY3hB6 gained 713 points and 4fdPprcw gained none. Unlike the #1 and #4 wallets, the API shows no multiplier on either. Before the 09-15 clawback, the wallets that were later zeroed had stopped earning first. So these two could be removed again, which would give the 3.4% back. That is an inference from one earlier event, OnRe has said nothing about either wallet, and it could be wrong: they may simply stay listed and frozen."
+  "body": "Between the 10-21 and 10-22 snapshots, 4RxY3hB6 entered at #3 with 7,772,765,237 points and 4fdPprcw entered at #17 with 1,612,013,539. Neither address appears in any earlier snapshot, but their points sit on markets that closed in 2025 and early 2026 (AUG-2025 and JAN-2026 Exponent positions, among others). That suggests wallets that had been hidden from the leaderboard and were listed again, rather than new users. Adding 9.38B to a supply of about 278B lowered every other wallet's share by about 3.4% in a single day, with no change in their own points. Over the next 24.6 hours 4RxY3hB6 gained 713 points and 4fdPprcw gained none. That is not evidence of a freeze: on-chain, neither wallet holds any ONyc any more (4fdPprcw's last transaction was on 09-23, 4RxY3hB6's on 09-18), so there is nothing left for them to earn on. Their existing balances stay on the leaderboard; OnRe has not said why they were hidden or why they returned."
  }
 ]
