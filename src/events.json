@@ -40,5 +40,26 @@
    ]
   ],
   "body": "From 2026-10-03 OnRe's public API lists a global multiplier of 0.0001 on DTjNdfYm (#1, 19.67B points) and AR6xVAao (#3, 7.71B). Their combined daily credit fell from about 58M to about 6K, exactly in line with that multiplier, while every point they already held stayed in place. OnRe has not said why. Before the 09-15 clawback the zeroed wallets were frozen first, so a stopped wallet has been the warning sign of a wipe once before, but that is an inference from one prior event and could be wrong here: a throttle is not a zeroing, and these balances may simply stay. If they were zeroed, every other wallet's share of supply would rise by about 12%."
+ },
+ {
+  "date": "2026-10-23",
+  "kind": "warn",
+  "title": "Two returning wallets added 9.39B, and neither is earning",
+  "summary": "Two wallets missing from every earlier snapshot appeared on 10-22 with 9.39B points between them, and over the following day they earned almost nothing.",
+  "impact": [
+   [
+    "+9.39B",
+    "supply"
+   ],
+   [
+    "-3.4%",
+    "everyone else's share"
+   ],
+   [
+    "713",
+    "points earned in a day"
+   ]
+  ],
+  "body": "Between the 10-21 and 10-22 snapshots, 4RxY3hB6 entered at #3 with 7,772,765,237 points and 4fdPprcw entered at #17 with 1,612,013,539. Neither address appears in any earlier snapshot, but their points sit on markets that closed in 2025 and early 2026 (AUG-2025 and JAN-2026 Exponent positions, among others). That suggests wallets that had been hidden from the leaderboard and were listed again, rather than new users. Adding 9.38B to a supply of about 278B lowered every other wallet's share by about 3.4% in a single day, with no change in their own points. Over the next 24.6 hours 4RxY3hB6 gained 713 points and 4fdPprcw gained none. Unlike the #1 and #4 wallets, the API shows no multiplier on either. Before the 09-15 clawback, the wallets that were later zeroed had stopped earning first. So these two could be removed again, which would give the 3.4% back. That is an inference from one earlier event, OnRe has said nothing about either wallet, and it could be wrong: they may simply stay listed and frozen."
  }
 ]
