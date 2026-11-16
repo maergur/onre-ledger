@@ -61,5 +61,26 @@
    ]
   ],
   "body": "Between the 10-21 and 10-22 snapshots, 4RxY3hB6 entered at #3 with 7,772,765,237 points and 4fdPprcw entered at #17 with 1,612,013,539. Neither address appears in any earlier snapshot, but their points sit on markets that closed in 2025 and early 2026 (AUG-2025 and JAN-2026 Exponent positions, among others). That suggests wallets that had been hidden from the leaderboard and were listed again, rather than new users. Adding 9.38B to a supply of about 278B lowered every other wallet's share by about 3.4% in a single day, with no change in their own points. Over the next 24.6 hours 4RxY3hB6 gained 713 points and 4fdPprcw gained none. That is not evidence of a freeze: on-chain, neither wallet holds any ONyc any more (4fdPprcw's last transaction was on 09-23, 4RxY3hB6's on 09-18), so there is nothing left for them to earn on. Their existing balances stay on the leaderboard; OnRe has not said why they were hidden or why they returned."
+ },
+ {
+  "date": "2026-11-16",
+  "kind": "bad",
+  "title": "Clawback: 63 wallets zeroed",
+  "summary": "The total points supply fell for the second time on record, as 63 wallets holding 3.56B points were set to zero.",
+  "impact": [
+   [
+    "-2.44B",
+    "supply"
+   ],
+   [
+    "63",
+    "wallets zeroed"
+   ],
+   [
+    "3.56B",
+    "points removed"
+   ]
+  ],
+  "body": "Between the 11-15 19:35 and 11-16 16:19 snapshots the system total fell from 308.54B to 306.09B, even though the remaining wallets kept earning as usual. Sixty-three wallets holding 3,559,410,073 points between them were set to exactly zero and dropped off the leaderboard; looking them up directly now returns 0. The two largest were 3pPEbDm1 (607M, #68) and E354kEZj (540M, #75). Most of the removed points sat on Loopscale and Kamino ONyc and USDC lines (about 1.00B, 0.69B and 0.60B on the three largest). A further 59 wallets lost part of their balance without being zeroed, 50.7M points in total, the largest single cut being 25.6M. Unlike the 09-15 wave, a stopped wallet was only a partial warning this time: 29 of the 63 had earned nothing between the 11-04 and 11-15 snapshots, while the other 34 were still earning until they were zeroed. OnRe's reasons are not stated in this record; reading this as the same kind of enforcement as 09-15 is an inference and could be wrong. Every remaining wallet's share of supply rose by about 0.8% from the smaller denominator alone."
  }
 ]
